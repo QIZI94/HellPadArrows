@@ -193,20 +193,10 @@ void playMelody(const Sound* p_melody){
 	nextTone.setup(playNextTone, currentSound.duration);
 }
 
-BuzzerSoundsModule::InitializationState BuzzerSoundsModule::init()
-{
+BuzzerSoundsModule::InitializationState BuzzerSoundsModule::init(){
 	setVolume(HIGH);
-	//pinMode(mi_buzzerPin, OUTPUT);
-	//tone(mi_buzzerPin, 100, 1000);
-	//delay(1000);
-	//tone(mi_buzzerPin, 500, 1000);
-
-	//playMelody(MELODY_KEY_PRESS);
-	//playMelody(OF_LIBER_TEA);
-	playPreset(BuzzerSoundsModule::SoundPreset::LIBER_TEA);
+	playPreset(BuzzerSoundsModule::SoundPreset::VOLUME_TEST);
 	
-	//t.reset(3000);
-
 	return InitializationState::Initialized;
 }
 

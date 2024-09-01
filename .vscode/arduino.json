@@ -1,0 +1,7 @@
+{
+    "sketch": "HellPadArrows.ino",
+    "output": "build",
+    "configuration": "cpu=atmega328",
+    "board": "arduino:avr:mini",
+    "port": "/dev/ttyUSB0"
+}

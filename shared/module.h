@@ -4,10 +4,10 @@
 namespace module{
 class ManagedModule{
 public: // definitions
-	enum class InitializationState: int8_t{
+	enum class InitializationState: int8_t {
 		NotStarted,
+		InitializationInProgress,
 		Initialized,
-		Initializing,
 		Failed,
 		TooManyAttempts
 	};
@@ -97,7 +97,7 @@ public: // members
 				if(currentModule->initializationState == InitializationState::Failed){
 					currentModule->disable();
 				}
-				else if(currentModule->initializationState == InitializationState::Initializing){
+				else if(currentModule->initializationState == InitializationState::InitializationInProgress){
 					if(currentModule->initializationAttemptsLeft == 0){
 						currentModule->initializationState = InitializationState::TooManyAttempts;
 						currentModule->disable();

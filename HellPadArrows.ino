@@ -10,7 +10,7 @@ void initializationWatcher(const module::ManagedModule& module){
 			//Serial.print("STARTED     - ");
 			break;
 		
-		case InitState::Initializing:
+		case InitState::InitializationInProgress:
 			return;
 			//Serial.print("INITIALIZING- ");
 			break;

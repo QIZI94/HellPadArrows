@@ -11,10 +11,10 @@ struct KeyMapping{
     const char key;
     const Arrow arrow;
 } static const keyMapping[ARROW_POSITIONS]{
-    {'6', Arrow::UP},
-    {'#', Arrow::DOWN},
-    {'8', Arrow::LEFT},
-    {'C', Arrow::RIGHT},
+    {'7', Arrow::UP},
+    {'9', Arrow::DOWN},
+    {'5', Arrow::LEFT},
+    {'0', Arrow::RIGHT},
 };
 
 static Option<Arrow> matchKeyToArrow(char key){
@@ -112,30 +112,23 @@ struct MainModule : public module::ManagedModule{
 
 static MainModule Main("MainModule");
 
-
- void processKey(byte row, byte col) {          
-   
-     
-	// get the key label from the array and send it to the serial terminal       
-	Option<char> maybeKeyVal = module::Keyboard.rowColToChar(row,col);
-
-    if(char* p_keyVal = maybeKeyVal.ptr_value()){
-        Option<Arrow> maybeArrow = matchKeyToArrow(*p_keyVal); 
-        if(Arrow* p_arrow = maybeArrow.ptr_value()){
-			Main.handleArrowInput(*p_arrow);
-        }
-        Serial.print(*p_keyVal);
-	    Serial.print(" ");
-    }
-
-	
-
-       
+ void processKeyEvents(char key) {          
+	KeyState event = module::Keyboard.keypad.getState();
+    switch (event){
+		case PRESSED:
+			Option<Arrow> maybeArrow = matchKeyToArrow(key); 
+			if(Arrow* p_arrow = maybeArrow.ptr_value()){
+				Main.handleArrowInput(*p_arrow);
+			}
+			Serial.print(key);
+			Serial.print(" ");
+		break;
+	}            
 } 
 
 
 MainModule::InitializationState MainModule::init() {
-    module::Keyboard.setPressHandler(processKey);
+	module::Keyboard.keypad.addEventListener(processKeyEvents);
     
     module::Display.showArrow(0, Some(Arrow::UP));
 	module::Display.showArrow(1, Some(Arrow::DOWN));

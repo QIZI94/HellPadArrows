@@ -37,7 +37,6 @@ public:
 
 private:
     InitializationState init() override;
-    void run() override;
 private:
 	uint8_t mi_buzzerPin = HIGH_VOLUME_PIN;
 };

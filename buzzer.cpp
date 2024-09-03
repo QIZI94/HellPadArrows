@@ -34,8 +34,14 @@ struct SoundMapping{
 static const Sound* p_currentSound = nullptr;
 static TimedExecution10ms nextTone;
 
-constexpr uint16_t LONG_NOTE_DURATION = 160;
+
 constexpr uint16_t SHORT_NOTE_DURATION = 80;
+constexpr uint16_t MID_NOTE_DURATION = 120;
+constexpr uint16_t LONG_NOTE_DURATION = 160;
+constexpr uint16_t LONG_NOTE_DURATION_2X = LONG_NOTE_DURATION * 2;
+constexpr uint16_t LONG_NOTE_DURATION_3X = LONG_NOTE_DURATION * 3;
+constexpr uint16_t LONG_NOTE_DURATION_4X = LONG_NOTE_DURATION * 4;
+
 static const Sound OF_LIBER_TEA[]{
 
 	{NOTE_A5, LONG_NOTE_DURATION},
@@ -77,74 +83,57 @@ static const Sound OF_LIBER_TEA[]{
 	{NOTE_F7, LONG_NOTE_DURATION},
 	{NOTE_D7, LONG_NOTE_DURATION},
 	
-	{NOTE_AS5, 600},
+	{NOTE_AS5, LONG_NOTE_DURATION_4X-40},
 	Sound::Pause(200),
 
-	{NOTE_F5, LONG_NOTE_DURATION*2},
-	{NOTE_E5, LONG_NOTE_DURATION*2},
-	{NOTE_D5, LONG_NOTE_DURATION*2},
-	{NOTE_A4, LONG_NOTE_DURATION*3},
-	{NOTE_C5, LONG_NOTE_DURATION*3},
-	{NOTE_D5, LONG_NOTE_DURATION*3},
+	{NOTE_F5, LONG_NOTE_DURATION_2X},
+	{NOTE_E5, LONG_NOTE_DURATION_2X},
+	{NOTE_D5, LONG_NOTE_DURATION_2X},
+	{NOTE_A4, LONG_NOTE_DURATION_3X},
+	{NOTE_C5, LONG_NOTE_DURATION_3X},
+	{NOTE_D5, LONG_NOTE_DURATION_3X},
 	Sound::Pause(300),
-	{NOTE_F5, LONG_NOTE_DURATION*2},
-	{NOTE_E5, LONG_NOTE_DURATION*2},
-	{NOTE_D5, LONG_NOTE_DURATION*2},
-	{NOTE_F5, LONG_NOTE_DURATION*2},
+	{NOTE_F5, LONG_NOTE_DURATION_2X},
+	{NOTE_E5, LONG_NOTE_DURATION_2X},
+	{NOTE_D5, LONG_NOTE_DURATION_2X},
+	{NOTE_F5, LONG_NOTE_DURATION_2X},
 	Sound::Pause(150),
-	{NOTE_C5, LONG_NOTE_DURATION*2},
-	{NOTE_C5, LONG_NOTE_DURATION*2},
-	{NOTE_D5, LONG_NOTE_DURATION*2},
-	{NOTE_A5, LONG_NOTE_DURATION*2},
+	{NOTE_C5, LONG_NOTE_DURATION_2X},
+	{NOTE_C5, LONG_NOTE_DURATION_2X},
+	{NOTE_D5, LONG_NOTE_DURATION_2X},
+	{NOTE_A5, LONG_NOTE_DURATION_2X},
 	{NOTE_C4, LONG_NOTE_DURATION},
-	{NOTE_G5, LONG_NOTE_DURATION*3},
+	{NOTE_G5, LONG_NOTE_DURATION_3X},
 
 	Sound::END()
 };
 
-
-//
-	//{NOTE_A7, LONG_NOTE_DURATION},
-	//{NOTE_A6, LONG_NOTE_DURATION},
-	//{NOTE_A5, LONG_NOTE_DURATION},
-
-// sounds good, satisfying
-//{NOTE_G6,100},
-//{NOTE_B7,100},
-
-
-
-//{NOTE_F6,120},
-//{NOTE_C7,80},
 static const Sound MELODY_KEY_PRESS[]{
-	{NOTE_G5,120},
-	{NOTE_C7,80},
+	{NOTE_G5, MID_NOTE_DURATION},
+	{NOTE_C7, SHORT_NOTE_DURATION},
+	
 	Sound::END()
 };
-
 
 static const Sound MELODY_FAIL[]{
-	{NOTE_F3,100},
-	{NOTE_E3,100},
+	{NOTE_F3, MID_NOTE_DURATION},
+	{NOTE_E3, MID_NOTE_DURATION},
+
 	Sound::END()
 };
 
 static const Sound MELODY_SUCCESS[]{
-	//{NOTE_B3,200},
-	//{NOTE_E5,100},
 	{NOTE_A7, LONG_NOTE_DURATION},
 	{NOTE_A6, LONG_NOTE_DURATION},
 	{NOTE_A5, LONG_NOTE_DURATION},
+
 	Sound::END()
 };
 
 static const Sound MELODY_VOLUME_TEST[]{
-	{NOTE_D2,100},
-	//{NOTE_G5,500},
-	{NOTE_A7,100},
-	//{NOTE_D7,500},
-	
-	
+	{NOTE_D2, MID_NOTE_DURATION},
+	{NOTE_A7, MID_NOTE_DURATION},
+
 	Sound::END()
 };
 
@@ -200,12 +189,7 @@ BuzzerSoundsModule::InitializationState BuzzerSoundsModule::init(){
 	return InitializationState::Initialized;
 }
 
-void BuzzerSoundsModule::run()
-{
- // do nothing
-}
-
-void BuzzerSoundsModule::setVolume(uint8_t volume){
+void BuzzerSoundsModule::setVolume(uint8_t volume) {
 	if(volume == HIGH){
 		mi_buzzerPin = HIGH_VOLUME_PIN;
 	}
@@ -214,17 +198,15 @@ void BuzzerSoundsModule::setVolume(uint8_t volume){
 	}
 }
 
-uint8_t BuzzerSoundsModule::getVolume() const{
+uint8_t BuzzerSoundsModule::getVolume() const {
 	return 0;
 }
 
-uint8_t BuzzerSoundsModule::getCurrentUsedPin() const
-{
+uint8_t BuzzerSoundsModule::getCurrentUsedPin() const {
 	return mi_buzzerPin;
 }
 
-void BuzzerSoundsModule::playPreset(SoundPreset soundPreset)
-{
+void BuzzerSoundsModule::playPreset(SoundPreset soundPreset){
 	for(SoundMapping entry : soundMapping){
 		if(entry.soundPreset == soundPreset){
 			playMelody(entry.p_sound);

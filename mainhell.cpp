@@ -3,7 +3,7 @@
 
 #include "timer.h"
 #include "keyboard.h"
-#include "displaysmall.h"
+#include "displayrgb.h"
 #include "buzzer.h"
 #include "arrowslots.h"
 

@@ -1,17 +1,17 @@
-#ifndef DISPLAY_SMALL_OLED
-#define DISPLAY_SMALL_OLED
+#ifndef DISPLAY_BIG_RGB
+#define DISPLAY_BIG_RGB
 
 #include "helldef.h"
 #include "shared/module.h"
 #include "shared/optional.h"
 
 namespace module{ // display
-class DisplaySmallOLEDModule : public ManagedModule{
+class DisplayRGBModule : public ManagedModule{
 private:
 
 	
 public: 
-    DisplaySmallOLEDModule(const char* moduleInstanceName, bool autoenable = true)
+    DisplayRGBModule(const char* moduleInstanceName, bool autoenable = true)
     : ManagedModule(moduleInstanceName, autoenable) {}
 
 	void showText(const char* str_c);
@@ -43,7 +43,7 @@ private:
 	bool mb_redraw = true;
 };
 
-inline DisplaySmallOLEDModule Display("DisplaySmallOLEDModule");
+inline DisplayRGBModule Display("DisplayRGBModule");
 
 } // display
 

@@ -11,10 +11,10 @@ struct KeyMapping{
     const char key;
     const Arrow arrow;
 } static const keyMapping[ARROW_POSITIONS]{
-    {'7', Arrow::UP},
-    {'9', Arrow::DOWN},
-    {'5', Arrow::LEFT},
-    {'0', Arrow::RIGHT},
+    {'0', Arrow::UP},
+    {'5', Arrow::DOWN},
+    {'9', Arrow::LEFT},
+    {'7', Arrow::RIGHT},
 };
 
 static Option<Arrow> matchKeyToArrow(char key){

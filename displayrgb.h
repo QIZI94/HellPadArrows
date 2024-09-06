@@ -8,8 +8,16 @@
 namespace module{ // display
 class DisplayRGBModule : public ManagedModule{
 private:
+	enum class DisplayRotation : uint8_t {
+		North = 0,
+		East = 1,
+		South = 2,
+		West = 3
+	};
 
-	
+private:
+	static constexpr DisplayRotation DEFAULT_ROTATION = DisplayRotation::South;
+
 public: 
     DisplayRGBModule(const char* moduleInstanceName, bool autoenable = true)
     : ManagedModule(moduleInstanceName, autoenable) {}

@@ -199,7 +199,7 @@ void BuzzerSoundsModule::setVolume(uint8_t volume) {
 }
 
 uint8_t BuzzerSoundsModule::getVolume() const {
-	return 0;
+	return mi_buzzerPin == HIGH_VOLUME_PIN ? HIGH : LOW;
 }
 
 uint8_t BuzzerSoundsModule::getCurrentUsedPin() const {

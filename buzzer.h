@@ -20,8 +20,8 @@ public:
 	};
 
 private:
-	static constexpr uint8_t LOW_VOLUME_PIN = Pinout::Assignment::BUZ_HIGH;
-	static constexpr uint8_t HIGH_VOLUME_PIN = Pinout::Assignment::BUZ_LOW;
+	static constexpr uint8_t LOW_VOLUME_PIN = Pinout::Assignment::BUZ_LOW;
+	static constexpr uint8_t HIGH_VOLUME_PIN = Pinout::Assignment::BUZ_HIGH;
 
 public: 
     BuzzerSoundsModule(const char* moduleInstanceName, bool autoenable = true)

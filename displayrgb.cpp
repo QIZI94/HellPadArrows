@@ -66,17 +66,18 @@ void anim(TimedExecution10ms&){
 	if(i > 230){
 		i = 0;
 	}
-	if(i > 2){
-		tft.fillRect(i-3, 130, ARROW_WIDTH, ARROW_HEIGHT, CLEAR_COLOR);
-		tft.fillRect(i-3 + 25, 130, ARROW_WIDTH, ARROW_HEIGHT, CLEAR_COLOR);
+	if(i > 3){
+	//	tft.fillRect(i-3, 130, ARROW_WIDTH, ARROW_HEIGHT, CLEAR_COLOR);
+		tft.fillRect(i-4 + 25, 130, ARROW_WIDTH, ARROW_HEIGHT, CLEAR_COLOR);
 		//tft.drawBitmap(i-6,130, DPS_ArrowDownBMP, ARROW_WIDTH, ARROW_HEIGHT, CLEAR_COLOR);
 		//tft.drawBitmap(i-6 + 25,130, DPS_ArrowDownBMP, ARROW_WIDTH, ARROW_HEIGHT, CLEAR_COLOR);
 	}
-	
-	tft.drawBitmap(i,130, DPS_ArrowDownBMP, ARROW_WIDTH, ARROW_HEIGHT, ILI9341_YELLOW);
+	//delay();
+	//tft.drawBitmap(i,130, DPS_ArrowDownBMP, ARROW_WIDTH, ARROW_HEIGHT, ILI9341_YELLOW);
 	tft.drawBitmap(i + 25,130, DPS_ArrowDownBMP, ARROW_WIDTH, ARROW_HEIGHT, ILI9341_YELLOW);
-	i+=3;
-	timedAnimation.restart(70);
+	i+=4;
+	timedAnimation.restart(40);
+	//delay(100);
 }
 
 DisplayRGBModule::InitializationState DisplayRGBModule::init(){
@@ -84,7 +85,7 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	//digitalWrite(Pinout::Assignment::TFT_CS	, HIGH); 
 	tft.begin();
 	
-	/*uint8_t x = tft.readcommand8(ILI9341_RDMODE);
+	uint8_t x = tft.readcommand8(ILI9341_RDMODE);
 	Serial.print("Display Power Mode: 0x"); Serial.println(x, HEX);
 	x = tft.readcommand8(ILI9341_RDMADCTL);
 	Serial.print("MADCTL Mode: 0x"); Serial.println(x, HEX);
@@ -93,11 +94,11 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	x = tft.readcommand8(ILI9341_RDIMGFMT);
 	Serial.print("Image Format: 0x"); Serial.println(x, HEX);
 	x = tft.readcommand8(ILI9341_RDSELFDIAG);
-	Serial.print("Self Diagnostic: 0x"); Serial.println(x, HEX); */
+	Serial.print("Self Diagnostic: 0x"); Serial.println(x, HEX); 
 
-	if(tft.readcommand8(ILI9341_RDSELFDIAG) != 0xE0){
-		return InitializationState::Failed;
-	}
+	//if(tft.readcommand8(ILI9341_RDSELFDIAG) != 0xE0){
+	//	return InitializationState::Failed;
+	//}
 
 
 	
@@ -127,7 +128,7 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 		// read diagnostics (optional but can help debug problems)
 
 
-	timedAnimation.setup(anim, 70);
+	timedAnimation.setup(anim, 40);
 
 
 	

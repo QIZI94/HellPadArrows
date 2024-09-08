@@ -3,8 +3,15 @@
 
 #include <Arduino.h>
 
-
 #define CONST_LENGTH(arr) (sizeof(arr)/sizeof(arr[0]))
+// Reads dereferenceable struct or primitive type from program memory that has been marked with PROGMEM
+#define PROGMEM_READ_STRUCTURE(p_dst, p_src) do { memcpy_P(p_dst, p_src, sizeof(*p_dst));} while (0)
+
+template<class T>
+struct RemovePointer_t{
+
+};
+
 
 enum class Arrow{
     UP,

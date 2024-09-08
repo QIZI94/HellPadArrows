@@ -27,6 +27,8 @@ struct Sound{
 };
 
 struct SoundMapping{
+	constexpr SoundMapping() : soundPreset(BuzzerSoundsModule::SoundPreset::VOLUME_TEST), p_sound(nullptr) {}
+	constexpr SoundMapping(const BuzzerSoundsModule::SoundPreset soundPreset, const Sound* p_sound) : soundPreset(soundPreset), p_sound(p_sound) {}
 	const BuzzerSoundsModule::SoundPreset soundPreset;
 	const Sound* p_sound;
 };
@@ -42,7 +44,7 @@ constexpr uint16_t LONG_NOTE_DURATION_2X = LONG_NOTE_DURATION * 2;
 constexpr uint16_t LONG_NOTE_DURATION_3X = LONG_NOTE_DURATION * 3;
 constexpr uint16_t LONG_NOTE_DURATION_4X = LONG_NOTE_DURATION * 4;
 
-static const Sound OF_LIBER_TEA[]{
+inline const PROGMEM Sound OF_LIBER_TEA[]{
 
 	{NOTE_A5, LONG_NOTE_DURATION},
 	{NOTE_D4, LONG_NOTE_DURATION},
@@ -108,21 +110,21 @@ static const Sound OF_LIBER_TEA[]{
 	Sound::END()
 };
 
-static const Sound MELODY_KEY_PRESS[]{
+static const PROGMEM Sound MELODY_KEY_PRESS[]{
 	{NOTE_G5, MID_NOTE_DURATION},
 	{NOTE_C7, SHORT_NOTE_DURATION},
 	
 	Sound::END()
 };
 
-static const Sound MELODY_FAIL[]{
+static const PROGMEM Sound MELODY_FAIL[]{
 	{NOTE_F3, MID_NOTE_DURATION},
 	{NOTE_E3, MID_NOTE_DURATION},
 
 	Sound::END()
 };
 
-static const Sound MELODY_SUCCESS[]{
+static const PROGMEM Sound MELODY_SUCCESS[]{
 	{NOTE_A7, LONG_NOTE_DURATION},
 	{NOTE_A6, LONG_NOTE_DURATION},
 	{NOTE_A5, LONG_NOTE_DURATION},
@@ -130,14 +132,14 @@ static const Sound MELODY_SUCCESS[]{
 	Sound::END()
 };
 
-static const Sound MELODY_VOLUME_TEST[]{
+static const PROGMEM Sound MELODY_VOLUME_TEST[]{
 	{NOTE_D2, MID_NOTE_DURATION},
 	{NOTE_A7, MID_NOTE_DURATION},
 
 	Sound::END()
 };
 
-static SoundMapping soundMapping[]{
+static const PROGMEM SoundMapping soundMapping[]{
 	{BuzzerSoundsModule::SoundPreset::BUTTON_PRESS, MELODY_KEY_PRESS},
 	{BuzzerSoundsModule::SoundPreset::FAIL, MELODY_FAIL},
 	{BuzzerSoundsModule::SoundPreset::SUCCESS, MELODY_SUCCESS},
@@ -146,11 +148,14 @@ static SoundMapping soundMapping[]{
 
 };
 
+
+
 void playNextTone(TimedExecution10ms&){
 	if(p_currentSound == nullptr){
 		return;
 	}
-	const Sound& currentSound = *(++p_currentSound);	
+	Sound currentSound;
+	PROGMEM_READ_STRUCTURE(&currentSound, ++p_currentSound);
 	uint8_t buzzerPin = Buzzer.getCurrentUsedPin();
 	if(currentSound == Sound::END()){
 		noTone(buzzerPin);
@@ -173,7 +178,8 @@ void playMelody(const Sound* p_melody){
 	if(p_currentSound == nullptr){
 		return;
 	}
-	const Sound& currentSound = *p_currentSound;
+	Sound currentSound;
+	PROGMEM_READ_STRUCTURE(&currentSound, p_melody);
 	if(currentSound == Sound::END()){
 		return;
 	}
@@ -207,7 +213,10 @@ uint8_t BuzzerSoundsModule::getCurrentUsedPin() const {
 }
 
 void BuzzerSoundsModule::playPreset(SoundPreset soundPreset){
-	for(SoundMapping entry : soundMapping){
+	SoundMapping soundMappedList[CONST_LENGTH(soundMapping)];
+	memcpy_P(soundMappedList, soundMapping, sizeof(soundMappedList));
+
+	for(SoundMapping entry : soundMappedList){
 		if(entry.soundPreset == soundPreset){
 			playMelody(entry.p_sound);
 			break;

@@ -17,6 +17,8 @@ private:
 
 private:
 	static constexpr DisplayRotation DEFAULT_ROTATION = DisplayRotation::South;
+	static constexpr int16_t TARGET_FPS = 20;
+	static constexpr int16_t TARGET_FPS_DELTA_MS = 1000/TARGET_FPS;
 
 public: 
     DisplayRGBModule(const char* moduleInstanceName, bool autoenable = true)
@@ -36,6 +38,10 @@ public:
 private:
     InitializationState init() override;
     void run() override;
+
+private:
+	static void drawStaticContent();
+	static void	drawDynamicContent();
 
 private:
 	Option<Arrow> m_slots[ARROW_MAX_SLOTS];

@@ -1,30 +1,30 @@
 #include "arrowslots.h"
 
-const Arrow Stratagem_Bomb500kg[] = {
+static const Arrow Stratagem_Bomb500kg[] = {
     Arrow::UP, Arrow::LEFT, Arrow::RIGHT, Arrow::RIGHT, Arrow::RIGHT
 };
 
-const Arrow Stratagem_EagleSmokeStrike[] = {
+static const Arrow Stratagem_EagleSmokeStrike[] = {
     Arrow::UP, Arrow::DOWN, Arrow::UP, Arrow::LEFT
 };
 
-const Arrow Stratagem_EagleAirstrike[] = {
+static const Arrow Stratagem_EagleAirstrike[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::RIGHT
 };
 
-const Arrow Stratagem_EagleStrafingRun[] = {
+static const Arrow Stratagem_EagleStrafingRun[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::RIGHT
 };
 
-const Arrow Stratagem_EagleClusterBomb[] = {
+static const Arrow Stratagem_EagleClusterBomb[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::DOWN, Arrow::RIGHT, Arrow::DOWN
 };
 
-const Arrow Stratagem_JumpPack[] = {
+static const Arrow Stratagem_JumpPack[] = {
     Arrow::UP, Arrow::DOWN, Arrow::UP, Arrow::LEFT
 };
 
-const Arrow Stratagem_Eagle110MMRocketPods[] = {
+static const Arrow Stratagem_Eagle110MMRocketPods[] = {
     Arrow::DOWN, Arrow::DOWN, Arrow::RIGHT, Arrow::RIGHT, Arrow::RIGHT
 };
 
@@ -35,7 +35,7 @@ struct StratagemMapping {
     const char* displayName;
 };
 
-const StratagemMapping Stratagems[] = {
+static const StratagemMapping Stratagems[] = {
     {Stratagem::Bomb500kg, Stratagem_Bomb500kg, CONST_LENGTH(Stratagem_Bomb500kg), "500kg Bomb"},
     {Stratagem::EagleSmokeStrike, Stratagem_EagleSmokeStrike, CONST_LENGTH(Stratagem_EagleSmokeStrike), "Eagle Smoke Strike"},
     {Stratagem::EagleAirstrike, Stratagem_EagleAirstrike, CONST_LENGTH(Stratagem_EagleAirstrike), "Eagle Airstrike"},

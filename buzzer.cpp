@@ -190,7 +190,6 @@ void playMelody(const Sound* p_melody){
 
 BuzzerSoundsModule::InitializationState BuzzerSoundsModule::init(){
 	setVolume(HIGH);
-	playPreset(BuzzerSoundsModule::SoundPreset::VOLUME_TEST);
 	
 	return InitializationState::Initialized;
 }

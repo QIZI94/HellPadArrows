@@ -128,6 +128,8 @@ static MainModule Main("MainModule");
 
 
 MainModule::InitializationState MainModule::init() {
+	module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::VOLUME_TEST);
+
 	module::Keyboard.keypad.addEventListener(processKeyEvents);
     
     module::Display.showArrow(0, Some(Arrow::UP));

@@ -3,7 +3,44 @@
 
 #include "gui.h"
 
+#include "helldef.h"
+
 namespace gui{
+
+void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 color, Option<ClearSettings> maybeClear){
+	if(!window.needsUpdate()){
+		return;
+	}
+	
+	const gui::Position windowPosition = window.getPosition();
+	const gui::ImageBuffer* imageBuffer = window.getImageBuffer();
+
+	gui::Size windowSize;
+	if(window.isProgmem()){
+		PROGMEM_READ_STRUCTURE(&windowSize, &imageBuffer->size);
+	}
+	else{
+		windowSize = imageBuffer->size;
+	}
+
+	if(const gui::ClearSettings* p_clearSettings = maybeClear.ptr_value()){
+		p_clearSettings->clearFn(p_clearSettings->position, windowSize);
+	}
+	if(!window.isHidden()){
+		tft.drawBitmap(windowPosition.x, windowPosition.y, imageBuffer->image, windowSize.width, windowSize.height, color);
+	}
+}
+
+void drawHorizontalSeparatorWithBorders(Adafruit_ILI9341& tft, int16_t x, int16_t y, int16_t width, int16_t height){
+	width = max(8, width);
+	tft.drawFastHLine(x + 2, y - 2, width -7, ILI9341_LIGHTGREY);
+	tft.drawFastHLine(x,     y - 1, width -4, ILI9341_DARKGREY);
+	tft.fillRoundRect(x,     y,     width -3 , height, 4, ILI9341_YELLOW);
+	tft.drawFastHLine(x,     y + height , width -4, ILI9341_DARKGREY);
+	tft.drawFastHLine(x + 2, y + height + 1, width -7, ILI9341_LIGHTGREY);
+}
+
+
 // do not touch this functions, it's for some reason very fast, but only if packet buffer for width is 1
 void drawGeneratedGridPattern(Adafruit_ILI9341& tft, int16_t topX, int16_t topY, int16_t width, int16_t height, int16_t gridSpacing, Color565 lineColor, Color565 backgroundColor, int16_t offsetX = 0, int16_t offsetY = 0) {
 	gridSpacing += 1;

@@ -14,7 +14,6 @@ struct AnimatedMovement {
 		 : startX(startX), startY(startY), stepX(stepX), repeat(repeat), endX(endX), stepY(stepY), disabled(disabled) {}
 	gui::Window window;
 	struct  {
-		
 		union{
 			struct {
 
@@ -30,19 +29,35 @@ struct AnimatedMovement {
 		
 	};
 	struct {
-			union {
+		union {
 			struct {
 
-				int32_t endX : 10;
-				int32_t endY : 10;
-				int32_t stepY  : 10;
-				int32_t disabled : 1;
+				int32_t endX 		: 10;
+				int32_t endY 		: 10;
+				int32_t stepY  		: 10;
+				int32_t disabled 	: 1;
 			};
 			uint32_t rawPart2;
 			
 			
 		};
 	};
+};
+
+struct ArrowToImageMapping{
+	constexpr ArrowToImageMapping(Arrow arrow, const gui::ImageBuffer* image)
+	: arrow(arrow), image(image) {}
+
+	const Arrow arrow;
+	const gui::ImageBuffer* image = nullptr;
+};
+
+
+const ArrowToImageMapping imageMapping[]{
+	{Arrow::UP,		&DPS_ArrowUpBMP},
+	{Arrow::DOWN,	&DPS_ArrowDownBMP},
+	{Arrow::LEFT,	&DPS_ArrowLeftBMP},
+	{Arrow::RIGHT,	&DPS_ArrowRightBMP},
 };
 
 
@@ -58,94 +73,82 @@ Adafruit_ILI9341 tft(
 	Pinout::Assignment::TFT_DC
 );
 
+static TimedExecution10ms timedAnimation;
+static uint32_t frameStartTime = 0;
+static uint32_t averageFPS = 0;
+static uint32_t averageSamples = 300;
 
-static void clearRect(int16_t x, int16_t y, int16_t width, int16_t height){
-	gui::drawGeneratedGridPattern(tft, x, y, width, height, GRID_SPACING, LINE_COLOR, CLEAR_COLOR, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
+
+static void clearWithGrid(gui::Position pos, gui::Size size){
+	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, LINE_COLOR, CLEAR_COLOR, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
 }
 
 static void drawWindowBitPixel(const gui::Window& window, gui::Color565 color, Option<gui::Position> clearPrevious = None<gui::Position>()){
-	bool isWindowHidden = window.isHidden();
-	if(isWindowHidden){
-		if(!window.needsClearing()){
-			return;
-		}
-		else if(!clearPrevious.hasValue()){
-			clearPrevious = Some(window.getPosition());
-		}
+	if(const gui::Position* p_clearPosition = clearPrevious.ptr_value()){
+		gui::drawWindowBitPixel(tft, window, color, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithGrid}));
 	}
-	
-	const gui::Position windowPosition = window.getPosition();
-	const gui::ImageBuffer* imageBuffer = window.imageBuffer;
-
-	gui::Size windowSize;
-	if(window.isProgmem()){
-		PROGMEM_READ_STRUCTURE(&windowSize, &imageBuffer->size);
+	else {
+		gui::drawWindowBitPixel(tft, window, color);
 	}
-	else{
-		windowSize = imageBuffer->size;
-	}
-
-	if(const gui::Position* p_toClear = clearPrevious.ptr_value()){
-		clearRect(p_toClear->x, p_toClear->y, windowSize.width, windowSize.width);
-		if(isWindowHidden){
-			return;
-		}
-	}
-	
-
-	tft.drawBitmap(windowPosition.x, windowPosition.y, imageBuffer->image, windowSize.width, windowSize.height, color);
 }
-
-static void drawHorizontalSeparatorWithBorders(int16_t x, int16_t y, int16_t width, int16_t height){
-	width = max(8, width);
-	tft.drawFastHLine(x + 2, y - 2, width -7, ILI9341_LIGHTGREY);
-	tft.drawFastHLine(x,     y - 1, width -4, ILI9341_DARKGREY);
-	tft.fillRoundRect(x,     y,     width -3 , height, 4, ILI9341_YELLOW);
-	tft.drawFastHLine(x,     y + height , width -4, ILI9341_DARKGREY);
-	tft.drawFastHLine(x + 2, y + height + 1, width -7, ILI9341_LIGHTGREY);
-}
-
 
 
 namespace module{ // display
+
+void DisplayRGBModule::setTargetFPS(uint8_t fps){
+	mi_targetFpsDeltaMs = 1000/uint16_t(fps);
+}
 
 void DisplayRGBModule::showText(const char *str_c){
 
 }
 
-void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow){
-
+void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow) {
+	if(slot < ARROW_MAX_SLOTS) {
+		m_slots[slot] = arrow;
+		update();
+	}
 }
 
 void DisplayRGBModule::showSlotSelection(Option<uint8_t> slot)
 {
 }
 
-void DisplayRGBModule::reset()
-{
+void DisplayRGBModule::reset() {
+	for(Option<Arrow>& slot : m_slots){
+		slot = None<Arrow>();
+	}
+
+	m_selectedSlot = None<uint8_t>();
+
+	update();
 }
 
-void DisplayRGBModule::update()
-{
+void DisplayRGBModule::update(){
+	mb_redraw = true;
 }
 
 Option<Arrow> DisplayRGBModule::getArrowFromSlot(uint8_t slot) const
 {
-	return Option<Arrow>();
+	if(slot >= ARROW_MAX_SLOTS) {
+		return None<Arrow>();
+	}
+
+	return m_slots[slot];	
 }
 
 Option<uint8_t> DisplayRGBModule::getSelection() const
 {
-	return Option<uint8_t>();
+	return m_selectedSlot;
 }
 
+uint8_t DisplayRGBModule::getTargetFPS() const {
+	return 1000/mi_targetFpsDeltaMs;
+}
 
 int16_t i = 0;
 
-static TimedExecution10ms timedAnimation;
-static uint32_t frameStartTime = 0;
-static uint32_t averageFPS = 0;
-static uint32_t averageSamples = 300;
+
 
 void anim(TimedExecution10ms&){
 	
@@ -198,8 +201,8 @@ gui::Window flyingArrow{25, 130, &DPS_ArrowDownBMP};
 void DisplayRGBModule::run(){
 	uint32_t delta = millis() - frameStartTime;
 
-	if(delta >= TARGET_FPS_DELTA_MS){
-
+	if(delta >= mi_targetFpsDeltaMs){
+		frameStartTime = millis();
 		drawDynamicContent();	
 
 		uint32_t fps = 1000/delta;
@@ -227,24 +230,25 @@ void DisplayRGBModule::run(){
 			averageSamples = 0;
 		}
 
-		frameStartTime = millis();
+		
 	}
 }
 
 
 
 void DisplayRGBModule::drawStaticContent(){	
-	clearRect(0,0, tft.width(), tft.height());
+	clearWithGrid(gui::Position{0, 0}, gui::Size{tft.width(), tft.height()});
 
 	int16_t screenWidth = tft.width();
 	gui::Window logoWindow{10, 30, &DPS_LogoSmall};
 
 	drawWindowBitPixel(logoWindow, ILI9341_YELLOW);
-	drawHorizontalSeparatorWithBorders(1, logoWindow.getPosition().y + 35, screenWidth, 4);
+	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y + 35, screenWidth, 4);
 
 	logoWindow.setPosition({10, 262});
+	logoWindow.forceUpdate();
 	drawWindowBitPixel(logoWindow, ILI9341_YELLOW);
-	drawHorizontalSeparatorWithBorders(1, logoWindow.getPosition().y - 10, screenWidth, 4);
+	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y - 10, screenWidth, 4);
 
 
 /*
@@ -266,14 +270,47 @@ void DisplayRGBModule::drawStaticContent(){
 
 
 void DisplayRGBModule::drawDynamicContent() {
-	if(i > 230){
-		i = 0;
+
+
+	if(mb_redraw){
+
+		uint8_t imageIdx = 0;
+		constexpr uint8_t slotOffsetY = 7;
+		for(uint8_t slotIdx = 0; slotIdx < ARROW_MAX_SLOTS; slotIdx++){
+			uint8_t slotOffsetX = m_slotOffsetsX[slotIdx];
+			const Option<Arrow>& arrow = m_slots[slotIdx];
+
+			if(const Arrow* p_arrow = arrow.ptr_value()){
+				for(const ArrowToImageMapping& entry : imageMapping){
+					if(entry.arrow == *p_arrow){
+						
+						drawWindowBitPixel(gui::Window{slotOffsetX, slotOffsetY, entry.image}, ILI9341_YELLOW, Some(gui::Position{slotOffsetX, slotOffsetY}));
+						//small_display.drawBitmap(slotOffsetX, slotOffsetY, entry.image, ARROW_WIDTH, ARROW_HEIGHT, SSD1306_WHITE);
+						break;
+					}
+				}
+				
+			}
+			else {
+				clearWithGrid(gui::Position{slotOffsetX, slotOffsetY}, gui::Size{ARROW_WIDTH, ARROW_HEIGHT});
+			}	
+		}
+
+		mb_redraw = false;
+	}
+	// IDLE
+	else {
+		if(i > 230){
+			i = 0;
+		}
+
+		gui::Position lastPosition =  flyingArrow.getPosition();
+		flyingArrow.setPosition({i, 100});
+		drawWindowBitPixel(flyingArrow, ILI9341_YELLOW, Some(lastPosition));
+		i+=8;
 	}
 
-	gui::Position lastPosition =  flyingArrow.getPosition();
-	flyingArrow.setPosition({i, 100});
-	drawWindowBitPixel(flyingArrow, ILI9341_YELLOW, Some(lastPosition));
-	i+=8;
+	
 }
 
 } // rgb display module

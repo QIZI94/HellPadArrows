@@ -17,7 +17,7 @@ private:
 
 private:
 	static constexpr DisplayRotation DEFAULT_ROTATION = DisplayRotation::South;
-	static constexpr int16_t TARGET_FPS = 20;
+	static constexpr int16_t TARGET_FPS = 60;
 	static constexpr int16_t TARGET_FPS_DELTA_MS = 1000/TARGET_FPS;
 
 public: 
@@ -28,6 +28,8 @@ public:
 	void showArrow(uint8_t slot, Option<Arrow> arrow);
 	void showSlotSelection(Option<uint8_t> slot);
 
+	void setTargetFPS(uint8_t fps);
+
 	void reset();
 
 	void update();
@@ -35,13 +37,15 @@ public:
 	Option<Arrow> getArrowFromSlot(uint8_t slot) const;
 	Option<uint8_t> getSelection() const;
 
+	uint8_t getTargetFPS() const;
+
 private:
     InitializationState init() override;
     void run() override;
 
 private:
-	static void drawStaticContent();
-	static void	drawDynamicContent();
+	void drawStaticContent();
+	void drawDynamicContent();
 
 private:
 	Option<Arrow> m_slots[ARROW_MAX_SLOTS];
@@ -52,7 +56,11 @@ private:
 	uint16_t m_selectionOffsetX[ARROW_MAX_SLOTS]{
 		0, 18, 40, 62, 84,106
 	};
+	Option<uint8_t> m_renderSlot;
 	Option<uint8_t> m_selectedSlot;
+	
+
+	uint16_t mi_targetFpsDeltaMs = TARGET_FPS_DELTA_MS;
 
 	bool mb_redraw = true;
 };

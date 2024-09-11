@@ -14,6 +14,9 @@ void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::C
 	
 	const gui::Position windowPosition = window.getPosition();
 	const gui::ImageBuffer* imageBuffer = window.getImageBuffer();
+	if(imageBuffer == nullptr){
+		return;
+	}
 
 	gui::Size windowSize;
 	if(window.isProgmem()){
@@ -33,11 +36,11 @@ void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::C
 
 void drawHorizontalSeparatorWithBorders(Adafruit_ILI9341& tft, int16_t x, int16_t y, int16_t width, int16_t height){
 	width = max(8, width);
-	tft.drawFastHLine(x + 2, y - 2, width -7, ILI9341_LIGHTGREY);
-	tft.drawFastHLine(x,     y - 1, width -4, ILI9341_DARKGREY);
-	tft.fillRoundRect(x,     y,     width -3 , height, 4, ILI9341_YELLOW);
-	tft.drawFastHLine(x,     y + height , width -4, ILI9341_DARKGREY);
-	tft.drawFastHLine(x + 2, y + height + 1, width -7, ILI9341_LIGHTGREY);
+	tft.drawFastHLine(x + 2, y - 2, 		width -7, ILI9341_LIGHTGREY);
+	tft.drawFastHLine(x,     y - 1, 		width -4, ILI9341_DARKGREY);
+	tft.fillRoundRect(x,     y,     		width -3, height, 4, ILI9341_YELLOW);
+	tft.drawFastHLine(x,     y + height , 	width -4, ILI9341_DARKGREY);
+	tft.drawFastHLine(x + 2, y + height + 1,width -7, ILI9341_LIGHTGREY);
 }
 
 

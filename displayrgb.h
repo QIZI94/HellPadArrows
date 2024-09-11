@@ -48,15 +48,6 @@ private:
 	void drawDynamicContent();
 
 private:
-	Option<Arrow> m_slots[ARROW_MAX_SLOTS];
-
-	int8_t m_slotOffsetsX[ARROW_MAX_SLOTS]{
-		0, 22, 44, 66, 88, 110
-	};
-	uint16_t m_selectionOffsetX[ARROW_MAX_SLOTS]{
-		0, 18, 40, 62, 84,106
-	};
-	Option<uint8_t> m_renderSlot;
 	Option<uint8_t> m_selectedSlot;
 	
 

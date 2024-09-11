@@ -67,6 +67,18 @@ constexpr int16_t GRID_LINES_OFFSET_X 	= +1;
 constexpr int16_t GRID_LINES_OFFSET_Y 	= +5;
 constexpr int16_t GRID_SPACING 			= 29;
 
+constexpr int16_t ARROWS_TOP_OFFSET 	= 150;
+constexpr int16_t ARROWS_LEFT_OFFSET	= 30;
+
+constexpr int16_t ARROWS_LEFT_OFFSETS[] = {
+	0, 	
+	22, 
+	44, 
+	66, 
+	88, 
+	110,
+};
+
 
 Adafruit_ILI9341 tft(
 	Pinout::Assignment::TFT_CS,
@@ -77,6 +89,17 @@ static TimedExecution10ms timedAnimation;
 static uint32_t frameStartTime = 0;
 static uint32_t averageFPS = 0;
 static uint32_t averageSamples = 300;
+
+
+
+static gui::Window arrowWindowSlots[ARROW_MAX_SLOTS] = {
+	gui::Window(ARROWS_LEFT_OFFSETS[0] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
+	gui::Window(ARROWS_LEFT_OFFSETS[1] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
+	gui::Window(ARROWS_LEFT_OFFSETS[2] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
+	gui::Window(ARROWS_LEFT_OFFSETS[3] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
+	gui::Window(ARROWS_LEFT_OFFSETS[4] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
+	gui::Window(ARROWS_LEFT_OFFSETS[5] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
+};
 
 
 static void clearWithGrid(gui::Position pos, gui::Size size){
@@ -105,18 +128,42 @@ void DisplayRGBModule::showText(const char *str_c){
 
 void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow) {
 	if(slot < ARROW_MAX_SLOTS) {
-		m_slots[slot] = arrow;
+		gui::Window& arrowWindow = arrowWindowSlots[slot];
+		if(const Arrow* p_arrow = arrow.ptr_value()){			
+			arrowWindow.setHidden(false);
+			for(const ArrowToImageMapping& entry : imageMapping){
+				if(entry.arrow == *p_arrow){
+					arrowWindow.setImageBuffer(entry.image);
+				}
+			}
+			
+		}
+		else {
+			arrowWindow.setHidden(true);
+		}
+		
+
 		update();
 	}
 }
 
-void DisplayRGBModule::showSlotSelection(Option<uint8_t> slot)
-{
+void DisplayRGBModule::showSlotSelection(Option<uint8_t> slot) {
+
+	if(const uint8_t* p_slot = slot.ptr_value()){
+		if(*p_slot < ARROW_MAX_SLOTS){
+			m_selectedSlot = Some(*p_slot);
+		}
+		else {
+			m_selectedSlot = None<uint8_t>();
+		}
+	}
+
+	
 }
 
 void DisplayRGBModule::reset() {
-	for(Option<Arrow>& slot : m_slots){
-		slot = None<Arrow>();
+	for(gui::Window& arrowWindow : arrowWindowSlots){
+		arrowWindow.setHidden(true);
 	}
 
 	m_selectedSlot = None<uint8_t>();
@@ -128,13 +175,10 @@ void DisplayRGBModule::update(){
 	mb_redraw = true;
 }
 
-Option<Arrow> DisplayRGBModule::getArrowFromSlot(uint8_t slot) const
-{
-	if(slot >= ARROW_MAX_SLOTS) {
-		return None<Arrow>();
-	}
+Option<Arrow> DisplayRGBModule::getArrowFromSlot(uint8_t slot) const {
 
-	return m_slots[slot];	
+
+	return None<Arrow>();;	
 }
 
 Option<uint8_t> DisplayRGBModule::getSelection() const
@@ -196,7 +240,7 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	return InitializationState::Initialized;
 }
 
-gui::Window flyingArrow{25, 130, &DPS_ArrowDownBMP};
+gui::Window flyingArrow{25, 130, &DPS_ArrowRightBMP};
 
 void DisplayRGBModule::run(){
 	uint32_t delta = millis() - frameStartTime;
@@ -274,26 +318,25 @@ void DisplayRGBModule::drawDynamicContent() {
 
 	if(mb_redraw){
 
-		uint8_t imageIdx = 0;
-		constexpr uint8_t slotOffsetY = 7;
-		for(uint8_t slotIdx = 0; slotIdx < ARROW_MAX_SLOTS; slotIdx++){
-			uint8_t slotOffsetX = m_slotOffsetsX[slotIdx];
-			const Option<Arrow>& arrow = m_slots[slotIdx];
+		for(gui::Window& arrowWindow : arrowWindowSlots){
+			drawWindowBitPixel(arrowWindow, ILI9341_YELLOW, Some(arrowWindow.getPosition()));
+			arrowWindow.updated();
+		}
 
-			if(const Arrow* p_arrow = arrow.ptr_value()){
-				for(const ArrowToImageMapping& entry : imageMapping){
-					if(entry.arrow == *p_arrow){
-						
-						drawWindowBitPixel(gui::Window{slotOffsetX, slotOffsetY, entry.image}, ILI9341_YELLOW, Some(gui::Position{slotOffsetX, slotOffsetY}));
-						//small_display.drawBitmap(slotOffsetX, slotOffsetY, entry.image, ARROW_WIDTH, ARROW_HEIGHT, SSD1306_WHITE);
-						break;
-					}
-				}
-				
-			}
-			else {
-				clearWithGrid(gui::Position{slotOffsetX, slotOffsetY}, gui::Size{ARROW_WIDTH, ARROW_HEIGHT});
-			}	
+		const gui::Position firstWindow = arrowWindowSlots[0].getPosition();
+		
+		if(const uint8_t* p_selectiedSlot = m_selectedSlot.ptr_value()){
+			const gui::Position slotWindow = arrowWindowSlots[*p_selectiedSlot].getPosition();
+			
+			tft.drawFastHLine(firstWindow.x, firstWindow.y-4, ARROW_WIDTH*7, ILI9341_DARKCYAN);
+			tft.drawFastHLine(slotWindow.x, slotWindow.y-4, ARROW_WIDTH, ILI9341_YELLOW);
+
+			tft.drawFastHLine(firstWindow.x, firstWindow.y+2 + ARROW_HEIGHT, ARROW_WIDTH*7, ILI9341_DARKCYAN);
+			tft.drawFastHLine(slotWindow.x, slotWindow.y+2 + ARROW_HEIGHT, ARROW_WIDTH, ILI9341_YELLOW);
+		}
+		else {
+			tft.drawFastHLine(firstWindow.x, firstWindow.y-4, ARROW_WIDTH*7, ILI9341_DARKCYAN);
+			tft.drawFastHLine(firstWindow.x, firstWindow.y+ 2 + ARROW_HEIGHT, ARROW_WIDTH*7, ILI9341_DARKCYAN);
 		}
 
 		mb_redraw = false;

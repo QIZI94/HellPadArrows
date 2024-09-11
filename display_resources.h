@@ -68,7 +68,7 @@ inline const PROGMEM gui::ImageBuffer DPS_LogoSmall =
 constexpr uint8_t ARROW_WIDTH 	= 19;
 constexpr uint8_t ARROW_HEIGHT 	= 19;
 
-inline const PROGMEM gui::ImageBuffer DPS_ArrowDownBMP = {
+inline const PROGMEM gui::ImageBuffer DPS_ArrowRightBMP = {
 	.size = {.width = ARROW_WIDTH, .height = ARROW_HEIGHT},
 	.image = {
 		0b00000000, 0b10000000,0b00000000,
@@ -94,7 +94,7 @@ inline const PROGMEM gui::ImageBuffer DPS_ArrowDownBMP = {
 };
 
 
-inline const PROGMEM gui::ImageBuffer DPS_ArrowUpBMP = {
+inline const PROGMEM gui::ImageBuffer DPS_ArrowLeftBMP = {
 	.size = {.width = ARROW_WIDTH, .height = ARROW_HEIGHT},
 	.image = {
 		0b00000000, 0b01000000,0b00000000,
@@ -119,7 +119,7 @@ inline const PROGMEM gui::ImageBuffer DPS_ArrowUpBMP = {
 	}
 };
 
-inline const PROGMEM gui::ImageBuffer DPS_ArrowRightBMP = {
+inline const PROGMEM gui::ImageBuffer DPS_ArrowUpBMP = {
 	.size = {.width = ARROW_WIDTH, .height = ARROW_HEIGHT},
 	.image = {
 		0b00000000, 0b01000000,0b00000000,
@@ -145,7 +145,7 @@ inline const PROGMEM gui::ImageBuffer DPS_ArrowRightBMP = {
 };
 
 
-inline const PROGMEM gui::ImageBuffer DPS_ArrowLeftBMP = {
+inline const PROGMEM gui::ImageBuffer DPS_ArrowDownBMP = {
 	.size = {.width = ARROW_WIDTH, .height = ARROW_HEIGHT},
 	.image = {
 		0b00000000, 0b00000000,0b00000000,

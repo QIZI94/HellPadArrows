@@ -54,6 +54,10 @@ public:
 		
     }
 
+	bool getCurrentCountDown() const {
+		return countdown;
+	}
+
     // checks if time set by reset(us) has elapsed since 
     bool isDown() const{
         return (countdown == 0);
@@ -76,7 +80,7 @@ public:
 private:
     //basically a singelthon which will return pointer to a pointer of the beging of managed linked list
     static StaticTimer** getTimersListBegin(){
-        static StaticTimer* begin = nullptr;
+        volatile static StaticTimer* begin = nullptr;
         return &begin;
     }
 
@@ -86,9 +90,9 @@ private:
             countdown -= 1;
         }
     }
-    uint32_t countdown = 0;
-    StaticTimer* prev = nullptr;
-    StaticTimer* next = nullptr;
+    volatile uint32_t countdown = 0;
+    volatile StaticTimer* prev = nullptr;
+    volatile StaticTimer* next = nullptr;
 };
 
 //example code usage with interrupt

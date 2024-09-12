@@ -9,6 +9,59 @@ public:
 using ExecFunPtr = void (*)(TimedExecution&);
 using StaticTimerBase = TimerBase;
 public:
+
+	struct List{
+		class const_iterator{
+		public:
+			const_iterator(const TimedExecution* timedExec){
+				timedExecution = timedExec;
+			}
+			const_iterator(const const_iterator& other){
+				timedExecution = other.timedExecution;
+			}
+			//const_iterator& operator=(const const_iterator&);
+    		const_iterator& operator++(){
+				timedExecution = next();
+				return *this;
+			}
+
+			const_iterator& operator--(){
+				timedExecution = previous();
+				return *this;
+			}
+
+			const TimedExecution* operator->() const {return timedExecution;};
+			const TimedExecution& operator*() const {return *timedExecution;};
+  			bool operator==(const const_iterator& rhs) const {return timedExecution==rhs.timedExecution;}
+  			bool operator!=(const const_iterator& rhs) const {return timedExecution!=rhs.timedExecution;}
+			
+			const TimedExecution* next() const {
+				return timedExecution->next;
+			}
+
+			const TimedExecution* previous() const {
+				return timedExecution->prev;
+			}
+
+		//private:
+			const TimedExecution* timedExecution;
+		};
+		
+		List() = delete;
+
+		static const_iterator begin(){
+			return const_iterator(*getTimedExecutionListBegin());
+		}
+		static const_iterator end(){
+			return const_iterator(nullptr);
+		}
+
+		static TimedExecution** getTimedExecutionListBegin(){
+			volatile static TimedExecution* listBegin = nullptr;
+			return &listBegin;
+		}
+	};
+
     TimedExecution(){
         // register timer upon creating the instance into doubly linked list
         //enable();
@@ -22,7 +75,7 @@ public:
     // enables countdown by tickAllTimers() function
     void enable(){
         if(!isEnabled()){
-            TimedExecution** begin = getTimedExecutionListBegin();
+            TimedExecution** begin = List::getTimedExecutionListBegin();
             if(*begin == nullptr){
                 *begin = this;
             }
@@ -38,7 +91,7 @@ public:
         if(prev != nullptr)
             prev->next = next;
         else{
-            *getTimedExecutionListBegin() = next;
+            *List::getTimedExecutionListBegin() = next;
         }
         
         if(next != nullptr)
@@ -49,7 +102,7 @@ public:
     }
 
     bool isEnabled() const{
-        return (prev != nullptr || next != nullptr || this == *getTimedExecutionListBegin());
+        return (prev != nullptr || next != nullptr || this == *List::getTimedExecutionListBegin());
     }
 
 	void setExecFunction(ExecFunPtr exec){
@@ -82,7 +135,7 @@ public:
     
     // this function will be called by timer interrupt and handle registered timers countdowns
     static void executeAllTimedExecutions(){
-        TimedExecution* currentTimedExecution = *getTimedExecutionListBegin();
+        TimedExecution* currentTimedExecution = *List::getTimedExecutionListBegin();
 
         while(currentTimedExecution != nullptr){
            	currentTimedExecution->exec();
@@ -94,14 +147,11 @@ public:
 
 private:
     //basically a singelthon which will return pointer to a pointer of the beging of managed linked list
-    static TimedExecution** getTimedExecutionListBegin(){
-        static TimedExecution* begin = nullptr;
-        return &begin;
-    }
+
 	
-    TimedExecution* prev = nullptr;
-    TimedExecution* next = nullptr;
-	ExecFunPtr execPtr = nullptr;
+    volatile TimedExecution* prev = nullptr;
+    volatile TimedExecution* next = nullptr;
+	volatile ExecFunPtr execPtr = nullptr;
 };
 
 

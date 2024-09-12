@@ -9,41 +9,6 @@
 #include "timer.h"
 
 
-struct AnimatedMovement {
-	constexpr AnimatedMovement(int16_t startX, int16_t startY, int16_t stepX, bool repeat, int16_t stopX, int16_t stopY, int16_t stepY, bool disabled)
-		 : startX(startX), startY(startY), stepX(stepX), repeat(repeat), endX(endX), stepY(stepY), disabled(disabled) {}
-	gui::Window window;
-	struct  {
-		union{
-			struct {
-
-				int32_t startX : 10;
-				int32_t startY : 10;
-				int32_t stepX  : 10;
-				int32_t repeat : 1;
-			};
-			uint32_t rawPart1;
-			
-			
-		};
-		
-	};
-	struct {
-		union {
-			struct {
-
-				int32_t endX 		: 10;
-				int32_t endY 		: 10;
-				int32_t stepY  		: 10;
-				int32_t disabled 	: 1;
-			};
-			uint32_t rawPart2;
-			
-			
-		};
-	};
-};
-
 struct ArrowToImageMapping{
 	constexpr ArrowToImageMapping(Arrow arrow, const gui::ImageBuffer* image)
 	: arrow(arrow), image(image) {}
@@ -53,12 +18,6 @@ struct ArrowToImageMapping{
 };
 
 
-const ArrowToImageMapping imageMapping[]{
-	{Arrow::UP,		&DPS_ArrowUpBMP},
-	{Arrow::DOWN,	&DPS_ArrowDownBMP},
-	{Arrow::LEFT,	&DPS_ArrowLeftBMP},
-	{Arrow::RIGHT,	&DPS_ArrowRightBMP},
-};
 
 
 constexpr gui::Color565 CLEAR_COLOR 	= ILI9341_DARKCYAN;
@@ -80,6 +39,7 @@ constexpr int16_t ARROWS_LEFT_OFFSETS[] = {
 };
 
 
+
 Adafruit_ILI9341 tft(
 	Pinout::Assignment::TFT_CS,
 	Pinout::Assignment::TFT_DC
@@ -92,6 +52,14 @@ static uint32_t averageSamples = 300;
 
 
 
+const ArrowToImageMapping imageMapping[]{
+	{Arrow::UP,		&DPS_ArrowUpBigBMP},
+	{Arrow::DOWN,	&DPS_ArrowDownBigBMP},
+	{Arrow::LEFT,	&DPS_ArrowLeftBigBMP},
+	{Arrow::RIGHT,	&DPS_ArrowRightBigBMP},
+};
+
+
 static gui::Window arrowWindowSlots[ARROW_MAX_SLOTS] = {
 	gui::Window(ARROWS_LEFT_OFFSETS[0] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
 	gui::Window(ARROWS_LEFT_OFFSETS[1] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
@@ -99,6 +67,31 @@ static gui::Window arrowWindowSlots[ARROW_MAX_SLOTS] = {
 	gui::Window(ARROWS_LEFT_OFFSETS[3] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
 	gui::Window(ARROWS_LEFT_OFFSETS[4] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
 	gui::Window(ARROWS_LEFT_OFFSETS[5] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
+};
+
+
+static gui::Window slotUpperSelection(
+	0, ARROWS_TOP_OFFSET - BIG_SELECTOR_HEIGHT - 5, &DPS_ArrowSelectorUpperBMP, true
+);
+
+static gui::Window slotLowerSelection(
+	0, ARROWS_TOP_OFFSET + BIG_ARROW_HEIGHT + 5, &DPS_ArrowSelectorLowerBMP, true
+);
+
+
+static gui::Position selectedUpperSlotPreviousPosition = slotUpperSelection.getPosition();
+static gui::Position selectedLowerSlotPreviousPosition = slotLowerSelection.getPosition();
+
+
+static gui::AnimatedMovement lowPriorityAnimations[] = {
+	gui::AnimatedMovement(
+		gui::Window(5, 300, &DPS_SmallStarOneBMP),
+		gui::Position{0,0},
+		gui::Position{0,0},
+		3000
+		
+
+	)
 };
 
 
@@ -123,7 +116,9 @@ void DisplayRGBModule::setTargetFPS(uint8_t fps){
 }
 
 void DisplayRGBModule::showText(const char *str_c){
-
+	//mi_ strlen(str_c)
+	ms_text = str_c;
+	mb_textChanged = true;
 }
 
 void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow) {
@@ -148,16 +143,34 @@ void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow) {
 }
 
 void DisplayRGBModule::showSlotSelection(Option<uint8_t> slot) {
-
 	if(const uint8_t* p_slot = slot.ptr_value()){
 		if(*p_slot < ARROW_MAX_SLOTS){
-			m_selectedSlot = Some(*p_slot);
-		}
-		else {
-			m_selectedSlot = None<uint8_t>();
-		}
-	}
+			selectedUpperSlotPreviousPosition = slotUpperSelection.getPosition();
+			selectedLowerSlotPreviousPosition = slotLowerSelection.getPosition();
+			//slotLowerSelection.setHidden(false);
+			gui::Position arrowSlotWindowPosition
+				= arrowWindowSlots[*p_slot].getPosition();
+			/*gui::Size arrowSlotWindowSize
+				= arrowWindowSlots[*p_slot].getImageBuffer();*/
+			arrowSlotWindowPosition.y = int16_t(arrowSlotWindowPosition.y + BIG_ARROW_HEIGHT + 5);
+			slotLowerSelection.setPosition(arrowSlotWindowPosition);
+			slotLowerSelection.setHidden(false);
 
+			arrowSlotWindowPosition
+				= arrowWindowSlots[*p_slot].getPosition();		
+			
+			arrowSlotWindowPosition.y = int16_t(arrowSlotWindowPosition.y - BIG_SELECTOR_HEIGHT - 5);
+			slotUpperSelection.setPosition(arrowSlotWindowPosition);
+			slotUpperSelection.setHidden(false);
+			
+			
+			return;
+		}
+
+	}
+	slotUpperSelection.setHidden(true);
+	slotLowerSelection.setHidden(true);
+	
 	
 }
 
@@ -166,13 +179,22 @@ void DisplayRGBModule::reset() {
 		arrowWindow.setHidden(true);
 	}
 
-	m_selectedSlot = None<uint8_t>();
+	showSlotSelection(None<uint8_t>());
+	selectedUpperSlotPreviousPosition = slotUpperSelection.getPosition();
+	selectedLowerSlotPreviousPosition = slotLowerSelection.getPosition();
 
+	//m_selectedSlot = None<uint8_t>();
+
+	showText(nullptr);
 	update();
 }
 
 void DisplayRGBModule::update(){
 	mb_redraw = true;
+}
+
+void DisplayRGBModule::wobble(uint32_t changeDirectionAfterMS){
+
 }
 
 Option<Arrow> DisplayRGBModule::getArrowFromSlot(uint8_t slot) const {
@@ -194,33 +216,13 @@ int16_t i = 0;
 
 
 
-void anim(TimedExecution10ms&){
-	
-	/*if(i > 2){
-		tft.fillRect(i-3, 130, ARROW_WIDTH, ARROW_HEIGHT, CLEAR_COLOR);
-		tft.fillRect(i-3 + 25, 130, ARROW_WIDTH, ARROW_HEIGHT, CLEAR_COLOR);
-		//tft.drawBitmap(i-6,130, DPS_ArrowDownBMP, ARROW_WIDTH, ARROW_HEIGHT, CLEAR_COLOR);
-		//tft.drawBitmap(i-6 + 25,130, DPS_ArrowDownBMP, ARROW_WIDTH, ARROW_HEIGHT, CLEAR_COLOR);
-	}*/
-	
-	
-
-	
-
-	frameStartTime = millis();
-
-
-	timedAnimation.restart(10);
-	//delay(100);
-}
-
 DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	//pinMode(Pinout::Assignment::TFT_CS, OUTPUT);
 	//digitalWrite(Pinout::Assignment::TFT_CS	, HIGH); 
 	tft.begin();
 	
 	uint8_t x = tft.readcommand8(ILI9341_RDMODE);
-	Serial.print("Display Power Mode: 0x"); Serial.println(x, HEX);
+	/*Serial.print("Display Power Mode: 0x"); Serial.println(x, HEX);
 	x = tft.readcommand8(ILI9341_RDMADCTL);
 	Serial.print("MADCTL Mode: 0x"); Serial.println(x, HEX);
 	x = tft.readcommand8(ILI9341_RDPIXFMT);
@@ -228,7 +230,7 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	x = tft.readcommand8(ILI9341_RDIMGFMT);
 	Serial.print("Image Format: 0x"); Serial.println(x, HEX);
 	x = tft.readcommand8(ILI9341_RDSELFDIAG);
-	Serial.print("Self Diagnostic: 0x"); Serial.println(x, HEX);
+	Serial.print("Self Diagnostic: 0x"); Serial.println(x, HEX);*/
 	
 	tft.setRotation(uint8_t(DisplayRGBModule::DEFAULT_ROTATION));
 	tft.setScrollMargins(0, 0);
@@ -240,19 +242,19 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	return InitializationState::Initialized;
 }
 
-gui::Window flyingArrow{25, 130, &DPS_ArrowRightBMP};
+gui::Window flyingArrow{25, 130, &DPS_Eagle1};
 
 void DisplayRGBModule::run(){
 	uint32_t delta = millis() - frameStartTime;
 
 	if(delta >= mi_targetFpsDeltaMs){
 		frameStartTime = millis();
-		drawDynamicContent();	
+		drawDynamicContent(delta);	
 
 		uint32_t fps = 1000/delta;
 
-		tft.fillRect(10, 200, 35, 15, CLEAR_COLOR);
-		tft.setCursor(10, 200);
+		tft.fillRect(10, 220, 35, 15, CLEAR_COLOR);	
+		tft.setCursor(10, 220);
 		tft.setTextColor(ILI9341_WHITE); 
 		tft.setTextSize(2);
 		char s_fps[6];
@@ -266,9 +268,9 @@ void DisplayRGBModule::run(){
 			averageSamples++;
 		}
 		else {
-			tft.fillRect(50, 200, 35, 15, CLEAR_COLOR);
+			tft.fillRect(50, 220, 35, 15, CLEAR_COLOR);
 			itoa(averageFPS / averageSamples, s_fps, 10);
-			tft.setCursor(50, 200);
+			tft.setCursor(50, 220);
 			tft.println(s_fps);
 			averageFPS = averageFPS / averageSamples;
 			averageSamples = 0;
@@ -313,7 +315,24 @@ void DisplayRGBModule::drawStaticContent(){
 }
 
 
-void DisplayRGBModule::drawDynamicContent() {
+void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
+	/*TimedExecution10ms** begin = TimedExecution10ms::List::getTimedExecutionListBegin();
+	if(*begin == nullptr){
+		Serial.println("Is null");
+	} */
+	/*static uint32_t howManyFrames = 0;
+	howManyFrames++;
+	for(auto it = TimedExecution10ms::List::begin(); it.timedExecution != nullptr; ++it){
+		
+		//Serial.println(howManyTimes, 10);
+		//Serial.println(" Is null");
+		
+		if(it->timer.isDown()){
+			Serial.print("Frame skipped: ");
+			Serial.println(howManyFrames, 10);
+			return;
+		}
+	}*/
 
 
 	if(mb_redraw){
@@ -323,23 +342,26 @@ void DisplayRGBModule::drawDynamicContent() {
 			arrowWindow.updated();
 		}
 
-		const gui::Position firstWindow = arrowWindowSlots[0].getPosition();
-		
-		if(const uint8_t* p_selectiedSlot = m_selectedSlot.ptr_value()){
-			const gui::Position slotWindow = arrowWindowSlots[*p_selectiedSlot].getPosition();
-			
-			tft.drawFastHLine(firstWindow.x, firstWindow.y-4, ARROW_WIDTH*7, ILI9341_DARKCYAN);
-			tft.drawFastHLine(slotWindow.x, slotWindow.y-4, ARROW_WIDTH, ILI9341_YELLOW);
+		drawWindowBitPixel(slotUpperSelection, ILI9341_BLACK, Some(selectedUpperSlotPreviousPosition));
+		slotUpperSelection.updated();
 
-			tft.drawFastHLine(firstWindow.x, firstWindow.y+2 + ARROW_HEIGHT, ARROW_WIDTH*7, ILI9341_DARKCYAN);
-			tft.drawFastHLine(slotWindow.x, slotWindow.y+2 + ARROW_HEIGHT, ARROW_WIDTH, ILI9341_YELLOW);
-		}
-		else {
-			tft.drawFastHLine(firstWindow.x, firstWindow.y-4, ARROW_WIDTH*7, ILI9341_DARKCYAN);
-			tft.drawFastHLine(firstWindow.x, firstWindow.y+ 2 + ARROW_HEIGHT, ARROW_WIDTH*7, ILI9341_DARKCYAN);
-		}
+		drawWindowBitPixel(slotLowerSelection, ILI9341_BLACK, Some(selectedLowerSlotPreviousPosition));
+		slotLowerSelection.updated();
 
 		mb_redraw = false;
+	}
+	else if(mb_textChanged) {
+		clearWithGrid({20,180}, {int16_t(13*mi_previousTextSize), 16});
+		mi_previousTextSize = strlen(ms_text);
+
+		tft.setCursor(20, 180);
+		tft.setTextSize(2);
+		tft.setTextColor(ILI9341_ORANGE);
+		if(ms_text != nullptr){
+			tft.println(ms_text);
+		}
+
+		mb_textChanged = false;
 	}
 	// IDLE
 	else {
@@ -349,8 +371,14 @@ void DisplayRGBModule::drawDynamicContent() {
 
 		gui::Position lastPosition =  flyingArrow.getPosition();
 		flyingArrow.setPosition({i, 100});
-		drawWindowBitPixel(flyingArrow, ILI9341_YELLOW, Some(lastPosition));
+		drawWindowBitPixel(flyingArrow, ILI9341_RED, Some(lastPosition));
 		i+=8;
+		for(gui::AnimatedMovement& animation : lowPriorityAnimations){
+			gui::Position oldPosition = gui::animateMovement(animation, 0);
+			drawWindowBitPixel(animation.window, ILI9341_YELLOW, Some(oldPosition));
+			animation.window.updated();
+		}
+		
 	}
 
 	

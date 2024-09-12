@@ -45,14 +45,20 @@ struct MainModule : public module::ManagedModule{
 
         if(uint8_t* p_nextIndex = nextSlotIndex.ptr_value()){
             if(!m_blockInputTimed.isEnabled()){
-                module::Display.showArrow(*p_nextIndex, Some(arrow));
-            // module::Display.showSlotSelection(*p_nextIndex);
+               	module::Display.showArrow(*p_nextIndex, Some(arrow));
+             	module::Display.showSlotSelection(Some<uint8_t>(*p_nextIndex));
                 
 
                 Option<Stratagem> maybeStratagem = m_arrowSlots.tryMatchStratagemFromSlots();
                 if(Stratagem* p_stratagem = maybeStratagem.ptr_value()){
-                    module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::SUCCESS);
-                    m_blockInputTimed.setup(timedUnlockInput, 2000);
+                    Serial.print("Activated combination for: ");
+					Serial.println(ArrowSlots::GetStratagemName(*p_stratagem));
+					
+					module::Display.showSlotSelection(None<uint8_t>());
+					module::Display.showText(ArrowSlots::GetStratagemName(*p_stratagem));
+					module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::SUCCESS);
+                    
+					m_blockInputTimed.setup(timedUnlockInput, 2000);
                     m_libertyDelayTimed.setup(timedLibertyStartup, 1000);
 					/*Serial.print("SUCCESS: activated stratagem");
 					if(const char* s_stratagemName = ArrowSlots::GetStratagemName(*p_stratagem)){
@@ -132,12 +138,12 @@ MainModule::InitializationState MainModule::init() {
 
 	module::Keyboard.keypad.addEventListener(processKeyEvents);
     
-    module::Display.showArrow(0, Some(Arrow::UP));
+    /*module::Display.showArrow(0, Some(Arrow::UP));
 	module::Display.showArrow(1, Some(Arrow::DOWN));
 	module::Display.showArrow(2, Some(Arrow::LEFT));
 	module::Display.showArrow(3, Some(Arrow::RIGHT));
 	module::Display.showArrow(4, Some(Arrow::DOWN));
-	module::Display.showArrow(5, Some(Arrow::UP));
+	module::Display.showArrow(5, Some(Arrow::UP));*/
     
     return InitializationState::Initialized;
 }

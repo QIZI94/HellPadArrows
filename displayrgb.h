@@ -34,6 +34,8 @@ public:
 
 	void update();
 
+	void wobble(uint32_t changeDirectionAfterMS);
+
 	Option<Arrow> getArrowFromSlot(uint8_t slot) const;
 	Option<uint8_t> getSelection() const;
 
@@ -45,15 +47,18 @@ private:
 
 private:
 	void drawStaticContent();
-	void drawDynamicContent();
+	void drawDynamicContent(uint32_t delta);
 
 private:
 	Option<uint8_t> m_selectedSlot;
+	const char* ms_text = nullptr;
+	
 	
 
 	uint16_t mi_targetFpsDeltaMs = TARGET_FPS_DELTA_MS;
-
 	bool mb_redraw = true;
+	bool mb_textChanged = false;
+	uint8_t mi_previousTextSize = 0;
 };
 
 inline DisplayRGBModule Display("DisplayRGBModule");

@@ -5,7 +5,21 @@
 
 #include "helldef.h"
 
+
+
+
 namespace gui{
+
+static Position lerp(const Position& start, const Position& end, int32_t duration_ms, int32_t delta_ms) {
+
+    //assert(duration_ms > 0);
+
+    int16_t x_lerp = int32_t(start.x + (end.x - start.x)) * delta_ms / duration_ms;
+    int16_t y_lerp = int32_t(start.y + (end.y - start.y)) * delta_ms / duration_ms;
+
+    return Position{x_lerp, y_lerp};
+}
+
 
 void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 color, Option<ClearSettings> maybeClear){
 	if(!window.needsUpdate()){
@@ -52,7 +66,7 @@ void drawGeneratedGridPattern(Adafruit_ILI9341& tft, int16_t topX, int16_t topY,
 	tft.startWrite();
   	tft.setAddrWindow(topX, topY, width, height);
 
-	constexpr int16_t MAX_DRAWABLE_WIDTH = 1;
+	constexpr int16_t MAX_DRAWABLE_WIDTH = 240/4;
 	uint16_t displayWidthBuffer[MAX_DRAWABLE_WIDTH];
 
 	for (int16_t y = 0; y < height; ++y) {
@@ -77,6 +91,23 @@ void drawGeneratedGridPattern(Adafruit_ILI9341& tft, int16_t topX, int16_t topY,
     }
 
   	tft.endWrite();
+}
+
+
+Position animateMovement(AnimatedMovement& animation, uint32_t delta){
+	Position oldPosition = animation.window.getPosition();
+	if(animation.isRepeated() && oldPosition == animation.getEndPos()){
+		animation.window.setPosition(animation.getStartPos());
+		return;
+	}
+
+	
+	Position newPosition = lerp(animation.getStartPos(), animation.getEndPos(), animation.getDuration(), delta);
+	animation.window.setPosition(newPosition);
+	
+
+	return oldPosition;
+
 }
 
 } // gui

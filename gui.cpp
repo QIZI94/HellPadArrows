@@ -136,7 +136,12 @@ void drawHorizontalSeparatorWithBorders(Adafruit_ILI9341& tft, int16_t x, int16_
 void drawGeneratedGridPattern(Adafruit_ILI9341& tft, int16_t topX, int16_t topY, int16_t width, int16_t height, int16_t gridSpacing, Color565 lineColor, Color565 backgroundColor, int16_t offsetX = 0, int16_t offsetY = 0) {
 	gridSpacing += 1;
 
+	topX = max(topX, 0);
+	topY = max(topY, 0);
     
+	width = min(topX + width + 2, tft.width()) - topX;
+	height = min(topY + height + 2, tft.height()) - topY;
+
 	tft.startWrite();
   	tft.setAddrWindow(topX, topY, width, height);
 
@@ -160,7 +165,6 @@ void drawGeneratedGridPattern(Adafruit_ILI9341& tft, int16_t topX, int16_t topY,
 			tft.writePixels(displayWidthBuffer, localWidth);
 		
 			widthToDraw -= localWidth;
-			
 		}
     }
 

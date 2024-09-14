@@ -21,7 +21,7 @@ enum class Arrow{
 };
 
 constexpr uint8_t ARROW_POSITIONS = 4;
-constexpr uint8_t ARROW_MAX_SLOTS = 6;
+constexpr uint8_t ARROW_MAX_SLOTS = 8;
 
 
 enum class Stratagem{

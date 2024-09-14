@@ -26,16 +26,18 @@ constexpr int16_t GRID_LINES_OFFSET_X 	= +1;
 constexpr int16_t GRID_LINES_OFFSET_Y 	= +5;
 constexpr int16_t GRID_SPACING 			= 29;
 
-constexpr int16_t ARROWS_TOP_OFFSET 	= 150;
-constexpr int16_t ARROWS_LEFT_OFFSET	= 30;
+constexpr int16_t ARROWS_TOP_OFFSET 	= 104;
+constexpr int16_t ARROWS_LEFT_OFFSET	= 14;
 
-constexpr int16_t ARROWS_LEFT_OFFSETS[] = {
+constexpr int16_t ARROWS_LEFT_OFFSETS[ARROW_MAX_SLOTS] = {
 	0, 	
-	22, 
-	44, 
-	66, 
-	88, 
-	110,
+	27, 
+	54, 
+	81, 
+	108, 
+	135,
+	162,
+	189
 };
 
 
@@ -67,6 +69,8 @@ static gui::Window arrowWindowSlots[ARROW_MAX_SLOTS] = {
 	gui::Window(ARROWS_LEFT_OFFSETS[3] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
 	gui::Window(ARROWS_LEFT_OFFSETS[4] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
 	gui::Window(ARROWS_LEFT_OFFSETS[5] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
+	gui::Window(ARROWS_LEFT_OFFSETS[6] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
+	gui::Window(ARROWS_LEFT_OFFSETS[7] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
 };
 
 
@@ -83,15 +87,91 @@ static gui::Position selectedUpperSlotPreviousPosition = slotUpperSelection.getP
 static gui::Position selectedLowerSlotPreviousPosition = slotLowerSelection.getPosition();
 
 
-static gui::AnimatedMovement lowPriorityAnimations[] = {
-	gui::AnimatedMovement(
-		gui::Window(5, 300, &DPS_SmallStarOneBMP),
-		gui::Position{0,0},
-		gui::Position{0,0},
-		3000
-		
+gui::AnimatedMovement animEagle1(
+	gui::Window(0, 0, &DPS_Eagle1),
+	gui::Position{0, 100},	gui::Position{200, 100},
+	2000,
+	true
+);
 
-	)
+
+static gui::AnimatedMovement lowPriorityAnimations[] = {
+	/*gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_Eagle1),
+		gui::Position{0, 100},	gui::Position{200, 100},
+		2000,
+		true
+	),*/
+
+
+// STARS
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Position{20,290},	gui::Position{10, 331},
+		1200,
+		true, false, true
+	),
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Position{50,290},	gui::Position{40, 331},
+		1500,
+		true, false, true
+	),
+
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Position{80,290},	gui::Position{70, 331},
+		2000,
+		true, false, true
+	),
+
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Position{115,292},	gui::Position{115, 331},
+		1700,
+		true, false, true
+	),
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Position{140,290},	gui::Position{170, 331},
+		1300,
+		true, false, true
+	),
+
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Position{170,290},	gui::Position{200, 331},
+		1900,
+		true, false, true
+	),
+
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Position{200,290},	gui::Position{230, 331},
+		2200,
+		true, false, true
+	),
+
+	
+};
+static uint8_t lowPriorityAnimationsIndex = 0;
+
+
+
+struct {
+	const gui::Window* windowPtr;
+	const gui::Color565 color;
+} const windowColorMapping[] = {
+	{.windowPtr = &animEagle1.window, .color = ILI9341_RED},
+	{.windowPtr = &lowPriorityAnimations[0].window, .color = ILI9341_YELLOW},
+	{.windowPtr = &lowPriorityAnimations[1].window, .color = ILI9341_YELLOW},
+	{.windowPtr = &lowPriorityAnimations[2].window, .color = ILI9341_YELLOW},
+	{.windowPtr = &lowPriorityAnimations[3].window, .color = ILI9341_YELLOW},
+	{.windowPtr = &lowPriorityAnimations[4].window, .color = ILI9341_YELLOW},
+	{.windowPtr = &lowPriorityAnimations[5].window, .color = ILI9341_YELLOW},
+	{.windowPtr = &lowPriorityAnimations[6].window, .color = ILI9341_YELLOW},
+	{.windowPtr = &lowPriorityAnimations[7].window, .color = ILI9341_YELLOW},
+	
 };
 
 
@@ -106,6 +186,15 @@ static void drawWindowBitPixel(const gui::Window& window, gui::Color565 color, O
 	else {
 		gui::drawWindowBitPixel(tft, window, color);
 	}
+}
+
+static Option<gui::Color565> matchWindowWithColor(const gui::Window* windowPtr){
+	for(const auto& entry : windowColorMapping){
+		if(entry.windowPtr == windowPtr){
+			return Some(entry.color);
+		}
+	}
+	return None<gui::Color565>();
 }
 
 
@@ -296,6 +385,7 @@ void DisplayRGBModule::drawStaticContent(){
 	drawWindowBitPixel(logoWindow, ILI9341_YELLOW);
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y - 10, screenWidth, 4);
 
+	tft.drawRect(10, 90, 220,50, ILI9341_BLACK);
 
 /*
 	drawWindowBitPixel(gui::Window{25,100, &DPS_ArrowUpBMP}, ILI9341_YELLOW);
@@ -365,19 +455,43 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 	}
 	// IDLE
 	else {
-		if(i > 230){
-			i = 0;
+
+		/*gui::Position oldPositionEagle1 = animEagle1.animateMovement();
+		Option<gui::Color565> maybeEagle1Color = matchWindowWithColor(&animEagle1.window);
+		if(const gui::Color565* p_color = maybeEagle1Color.ptr_value()){
+			drawWindowBitPixel(animEagle1.window, *p_color, Some(oldPositionEagle1));
+		}*/
+		
+
+
+		if(lowPriorityAnimationsIndex >= CONST_LENGTH(lowPriorityAnimations)){
+			lowPriorityAnimationsIndex = 0;
 		}
 
-		gui::Position lastPosition =  flyingArrow.getPosition();
-		flyingArrow.setPosition({i, 100});
-		drawWindowBitPixel(flyingArrow, ILI9341_RED, Some(lastPosition));
-		i+=8;
-		for(gui::AnimatedMovement& animation : lowPriorityAnimations){
-			gui::Position oldPosition = gui::animateMovement(animation, 0);
-			drawWindowBitPixel(animation.window, ILI9341_YELLOW, Some(oldPosition));
-			animation.window.updated();
+		gui::AnimatedMovement& animation = lowPriorityAnimations[lowPriorityAnimationsIndex];
+		gui::Position oldPosition = animation.animateMovement();
+
+		Option<gui::Color565> maybeColor = matchWindowWithColor(&animation.window);
+		if(const gui::Color565* p_color = maybeColor.ptr_value()){
+			drawWindowBitPixel(animation.window, *p_color, Some(oldPosition));
+			if(animation.isMirroredY()){
+				int16_t halfDisplayWidth = tft.width();
+
+				gui::Position positionMirrored = animation.window.getPosition();
+				gui::Position oldPositionMirrored = oldPosition;
+				positionMirrored.y = 70 - (positionMirrored.y - halfDisplayWidth);
+				oldPositionMirrored.y = 70 - (oldPositionMirrored.y - halfDisplayWidth);	
+				drawWindowBitPixel(gui::Window(positionMirrored.x, positionMirrored.y, animation.window.getImageBuffer()), *p_color, Some(oldPositionMirrored));				
+			}
 		}
+		else {
+			drawWindowBitPixel(animation.window, ILI9341_PINK, Some(oldPosition));
+		}
+		animation.window.updated();
+
+		lowPriorityAnimationsIndex++;
+	
+
 		
 	}
 

@@ -10,15 +10,94 @@
 
 namespace gui{
 
-static Position lerp(const Position& start, const Position& end, int32_t duration_ms, int32_t delta_ms) {
 
-    //assert(duration_ms > 0);
-
-    int16_t x_lerp = int32_t(start.x + (end.x - start.x)) * delta_ms / duration_ms;
-    int16_t y_lerp = int32_t(start.y + (end.y - start.y)) * delta_ms / duration_ms;
-
-    return Position{x_lerp, y_lerp};
+static uint8_t getRed(Color565 color) {
+    return (color >> 11) & 0x1F; 
 }
+
+static uint8_t getGreen(Color565 color) {
+    return (color >> 5) & 0x3F; 
+}
+
+static uint8_t getBlue(Color565 color) {
+    return color & 0x1F; 
+}
+
+static Color565 combineRGB565(uint8_t r, uint8_t g, uint8_t b) {
+    return (r << 11) | (g << 5) | b; 
+}
+
+int16_t lerp(int16_t start, int16_t end, uint16_t durationMs, uint16_t elapsedTtimeMs) {
+	if(durationMs == 0){
+		return end;
+	}
+    return static_cast<int32_t>(start) + static_cast<int32_t>(end - start) * elapsedTtimeMs / durationMs;
+}
+Position lerp(const Position& start, const Position& end, uint16_t durationMs, uint16_t elapsedTtimeMs) {
+    if(durationMs == 0){
+		return end;
+	}
+    int32_t x_lerp = lerp(start.x, end.x, durationMs, elapsedTtimeMs); // static_cast<int32_t>(start.x) + static_cast<int32_t>(end.x - start.x) * elapsedTtimeMs / durationMs;
+    int32_t y_lerp = lerp(start.y, end.y, durationMs, elapsedTtimeMs);//static_cast<int32_t>(start.y) + static_cast<int32_t>(end.y - start.y) * elapsedTtimeMs / durationMs;
+    return Position{.x = static_cast<int16_t>(x_lerp), .y = static_cast<int16_t>(y_lerp)};
+}
+
+
+Color565 lerpColor565(Color565 color_start, Color565 color_end, uint16_t durationMs, uint16_t elapsedTtimeMs) {
+    if(durationMs == 0){
+		return color_end;
+	}
+
+    uint8_t r_start = getRed(color_start);
+    uint8_t g_start = getGreen(color_start);
+    uint8_t b_start = getBlue(color_start);
+
+    uint8_t r_end = getRed(color_end);
+    uint8_t g_end = getGreen(color_end);
+    uint8_t b_end = getBlue(color_end);
+
+    uint8_t r_lerp = lerp(r_start, r_end, durationMs, elapsedTtimeMs);
+    uint8_t g_lerp = lerp(g_start, g_end, durationMs, elapsedTtimeMs);
+    uint8_t b_lerp = lerp(b_start, b_end, durationMs, elapsedTtimeMs);
+
+    return combineRGB565(r_lerp, g_lerp, b_lerp);
+}
+
+
+
+Position Position::lerpTo(const Position& to, uint16_t durationMs, uint16_t elapsedTtimeMs) const {
+	return lerp(*this, to, durationMs, elapsedTtimeMs);
+}
+
+
+Position AnimatedMovement::animateMovement(){
+	Position oldPosition = window.getPosition();
+ 
+	
+	if(isDisabled()){
+		return oldPosition;
+	}
+	else if(mb_initialized == false){
+		mi_startTime = millis();
+		mb_initialized = true;
+	}
+	else if(isFinished()){
+		if(isRepeated()){
+			
+			restart();
+		}
+		else {
+			return oldPosition;
+		}
+	}
+
+	uint16_t elapsedTime = millis() - mi_startTime;
+	Position newPosition = getStartPos().lerpTo(getEndPos(), mi_duration, elapsedTime < mi_duration ?  elapsedTime : mi_duration);
+	window.setPosition(newPosition);
+	
+	return oldPosition;
+}
+
 
 
 void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 color, Option<ClearSettings> maybeClear){
@@ -33,12 +112,7 @@ void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::C
 	}
 
 	gui::Size windowSize;
-	if(window.isProgmem()){
-		PROGMEM_READ_STRUCTURE(&windowSize, &imageBuffer->size);
-	}
-	else{
-		windowSize = imageBuffer->size;
-	}
+	PROGMEM_READ_STRUCTURE(&windowSize, &imageBuffer->size);
 
 	if(const gui::ClearSettings* p_clearSettings = maybeClear.ptr_value()){
 		p_clearSettings->clearFn(p_clearSettings->position, windowSize);
@@ -94,20 +168,6 @@ void drawGeneratedGridPattern(Adafruit_ILI9341& tft, int16_t topX, int16_t topY,
 }
 
 
-Position animateMovement(AnimatedMovement& animation, uint32_t delta){
-	Position oldPosition = animation.window.getPosition();
-	if(animation.isRepeated() && oldPosition == animation.getEndPos()){
-		animation.window.setPosition(animation.getStartPos());
-		return;
-	}
 
-	
-	Position newPosition = lerp(animation.getStartPos(), animation.getEndPos(), animation.getDuration(), delta);
-	animation.window.setPosition(newPosition);
-	
-
-	return oldPosition;
-
-}
 
 } // gui

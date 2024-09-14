@@ -15,12 +15,15 @@ struct Position {
 	int16_t x;
 	int16_t y;
 
-	bool operator ==(const Position& other){
+	bool operator ==(const Position& other) const {
 		return x == other.x && y == other.y;
 	}
-	bool operator !=(const Position& other){
-		return x != other.x && y != other.y;
+	bool operator !=(const Position& other) const {
+		return x != other.x || y != other.y;
 	}
+
+	Position lerpTo(const Position& to, uint16_t durationMs, uint16_t elapsedTtimeMs) const;
+
 };
 
 struct Size {
@@ -31,7 +34,7 @@ struct Size {
 		return width == other.width && height == other.height;
 	}
 	bool operator !=(const Size& other){
-		return width != other.width && height != other.height;
+		return width != other.width || height != other.height;
 	}
 };
 
@@ -51,15 +54,14 @@ private:
 
 	struct Properties{
 		constexpr Properties() : raw(0) {}
-		constexpr Properties(int16_t x, int16_t y, bool isHidden, bool isProgmem)
-		 : x(x), y(y), isHidden(isHidden), needsUpdate(true), isSRAM(!isProgmem) {}
+		constexpr Properties(int16_t x, int16_t y, bool isHidden)
+		 : x(x), y(y), isHidden(isHidden), needsUpdate(true) {}
 		union{
 			struct{
 				int32_t x  : 10;
 				int32_t y : 10;
 				int32_t isHidden : 1;
 				int32_t needsUpdate : 1;
-				int32_t isSRAM : 1;
 			};
 		
 			int32_t raw;
@@ -70,7 +72,7 @@ private:
 public:
 
 	constexpr Window(int16_t x, int16_t y, const ImageBuffer* imageBuffer, bool isHidden = false, bool isProgmem = true)
-	 : properties(Properties(x, y, isHidden, isProgmem)), imageBuffer(imageBuffer) {}
+	 : properties(Properties(x, y, isHidden)), imageBuffer(imageBuffer) {}
 
 	inline void forceUpdate() {
 		properties.needsUpdate = true;
@@ -87,10 +89,13 @@ public:
 
 	inline void setPosition(const Position& position) {
 		
-		properties.x = position.x;
-		properties.y = position.y;
-		if(!isHidden()){
-			forceUpdate();
+		
+		if(getPosition() != position){
+			properties.x = position.x;
+			properties.y = position.y;
+			if(!isHidden()){
+				forceUpdate();
+			}
 		}
 	}
 
@@ -107,17 +112,14 @@ public:
 		return Position{.x = int16_t(properties.x), .y = int16_t(properties.y)};
 	}
 	
-	inline bool isProgmem() const {
-		return !properties.isSRAM;
-	}
 
 	inline bool isHidden() const {
 		return properties.isHidden;
 	}
 #else
 public: 
-	constexpr Window(int16_t x, int16_t y, const ImageBuffer* imageBuffer, bool isHidden = false, bool isProgmem = true)
-	 : position(Position{x, y}), b_isHidden(isHidden), b_isSRAM(!isProgmem), b_needsUpdate(true), imageBuffer(imageBuffer) {}
+	constexpr Window(int16_t x, int16_t y, const ImageBuffer* imageBuffer, bool isHidden = false)
+	 : position(Position{x, y}), b_isHidden(isHidden), b_needsUpdate(true), imageBuffer(imageBuffer) {}
 
 	inline void forceUpdate() {
 		b_needsUpdate = true;
@@ -133,10 +135,11 @@ public:
 
 
 	inline void setPosition(const Position& position) {
-		
-		this->position = position;
-		if(!isHidden()){
-			forceUpdate();
+		if(this->position != position){
+			this->position = position;
+			if(!isHidden()){
+				forceUpdate();
+			}
 		}
 	}
 
@@ -149,17 +152,14 @@ public:
 
 	
 
-	inline Position getPosition() const {
+	inline const Position& getPosition() const {
 		return position;
-	}
-	
-	inline bool isProgmem() const {
-		return !b_isSRAM;
 	}
 
 	inline bool isHidden() const {
 		return b_isHidden;
 	}
+
 #endif
 public:
 	inline void setImageBuffer(const ImageBuffer* imgBuffer) {
@@ -180,7 +180,6 @@ private:
 #else 
 	Position position;
 	bool b_isHidden = false;
-	bool b_isSRAM = false;
 	bool b_needsUpdate = true;
 #endif
 	
@@ -189,8 +188,14 @@ private:
 
 class AnimatedMovement {
 public:
-	constexpr AnimatedMovement(const Window& window, Position start, Position stop, uint16_t duration, bool repeat = true, bool disabled = false, bool fadeInOut = true)
-	 : window(window), start(start), end(end), mi_duration(duration), mb_disabled(disabled), mb_repeat(repeat), mb_fadeInOut(fadeInOut){}
+	constexpr AnimatedMovement(const Window& window, const Position& start, const Position& end, uint16_t duration, bool repeat = true, bool disabled = false, bool mirroredY = false, bool fadeInOut = true)
+	 : window(window), start(start), end(end), mi_duration(duration), mi_startTime(0), mb_disabled(disabled), mb_mirroredY(mirroredY), mb_repeat(repeat), mb_fadeInOut(fadeInOut), mb_initialized(false){}
+
+
+	void restart() {
+		mi_startTime = millis();
+		window.setPosition(start);
+	}
 
 	void setStartPos(Position start){
 		this->start = start;
@@ -216,20 +221,23 @@ public:
 		mb_fadeInOut = fadeInOut;
 	}
 
+	void setMirroredY(bool mirrored){
+		mb_mirroredY = mirrored;
+	}
 
-	Position getStartPos() const {
+
+	const Position& getStartPos() const {
 		return start;
 	}
 
-	Position getEndPos() const {
+	const Position& getEndPos() const {
 		return end;
 	}
-
-
 
 	uint16_t getDuration() const {
 		return mi_duration;
 	}
+
 
 	bool isDisabled() const {
 		return mb_disabled;
@@ -242,15 +250,30 @@ public:
 	bool isFadeInOut() const {
 		return mb_fadeInOut;
 	}
+
+	bool isFinished() const {
+		return window.getPosition() == end;
+	}
+
+	bool isMirroredY() const {
+		return mb_mirroredY;
+	}
+
+	// returns old position
+	Position animateMovement();
+
 	gui::Window window;
 private:
 	
 	Position start;
 	Position end;
+	uint16_t mi_startTime;
 	uint16_t mi_duration;
 	bool mb_disabled;
+	bool mb_mirroredY;
 	bool mb_repeat;
 	bool mb_fadeInOut;
+	bool mb_initialized;
 	//bool
 };
 
@@ -263,13 +286,16 @@ struct ClearSettings {
 	ClearFuncPtr clearFn;
 };
 
+int16_t lerp(int16_t start, int16_t end, uint16_t durationMs, uint16_t elapsedTtimeMs);
+Position lerp(const Position& start, const Position& end, uint16_t durationMs, uint16_t elapsedTtimeMs);
+Color565 lerpColor565(Color565 color_start, Color565 color_end, uint16_t durationMs, uint16_t elapsedTtimeMs);
+
 void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 color, Option<gui::ClearSettings> maybeClear = None<gui::ClearSettings>());
 void drawHorizontalSeparatorWithBorders(Adafruit_ILI9341& tft, int16_t x, int16_t y, int16_t width, int16_t height);
 
 void drawGeneratedGridPattern(Adafruit_ILI9341& tft, int16_t topX, int16_t topY, int16_t width, int16_t height, int16_t gridSpacing, Color565 lineColor, Color565 backgroundColor, int16_t offsetX = 0, int16_t offsetY = 0);
 
-// returns old position
-extern Position animateMovement(AnimatedMovement& animation, uint32_t delta);
+
 
 } // gui
 

@@ -16,14 +16,14 @@ void initializationWatcher(const module::ManagedModule& module){
 			break;
 		
 		case InitState::Initialized:
-			Serial.print("INITIALIZED - ");
+			Serial.print(F("INITIALIZED - "));
 			break;
 
 		case InitState::Failed:
-			Serial.print("FAILED      - ");
+			Serial.print(F("FAILED      - "));
 			break;
 		case InitState::TooManyAttempts:
-			Serial.print("TIMEDOUT    - ");
+			Serial.print(F("TIMEDOUT    - "));
 			break;
 	}
 

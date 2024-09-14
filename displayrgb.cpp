@@ -17,17 +17,25 @@ struct ArrowToImageMapping{
 	const gui::ImageBuffer* image = nullptr;
 };
 
+struct ColorAndOutline{
+	gui::Color565 mainColor;
+	gui::Color565 outlineColor;
+};
 
 
 
-constexpr gui::Color565 CLEAR_COLOR 	= ILI9341_DARKCYAN;
-constexpr gui::Color565 LINE_COLOR 		= ILI9341_NAVY;
+constexpr gui::Color565 CLEAR_COLOR 			= ILI9341_DARKCYAN;
+constexpr gui::Color565 LINE_COLOR 				= ILI9341_NAVY;
+constexpr gui::Color565 HELL_MAIN_COLOR 		= ILI9341_YELLOW;
+constexpr gui::Color565 OUTLINE_COLOR			= ILI9341_BLACK;
+constexpr gui::Color565 SELECTOR_COLOR			= ILI9341_RED;
+constexpr gui::Color565 SELECTOR_OUTLINE_COLOR	= ILI9341_BLACK;
 constexpr int16_t GRID_LINES_OFFSET_X 	= +1;
 constexpr int16_t GRID_LINES_OFFSET_Y 	= +5;
 constexpr int16_t GRID_SPACING 			= 29;
 
 constexpr int16_t ARROWS_TOP_OFFSET 	= 104;
-constexpr int16_t ARROWS_LEFT_OFFSET	= 14;
+constexpr int16_t ARROWS_LEFT_OFFSET	= 27;
 
 constexpr int16_t ARROWS_LEFT_OFFSETS[ARROW_MAX_SLOTS] = {
 	0, 	
@@ -37,7 +45,6 @@ constexpr int16_t ARROWS_LEFT_OFFSETS[ARROW_MAX_SLOTS] = {
 	108, 
 	135,
 	162,
-	189
 };
 
 
@@ -70,7 +77,6 @@ static gui::Window arrowWindowSlots[ARROW_MAX_SLOTS] = {
 	gui::Window(ARROWS_LEFT_OFFSETS[4] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
 	gui::Window(ARROWS_LEFT_OFFSETS[5] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
 	gui::Window(ARROWS_LEFT_OFFSETS[6] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
-	gui::Window(ARROWS_LEFT_OFFSETS[7] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
 };
 
 
@@ -160,17 +166,17 @@ static uint8_t lowPriorityAnimationsIndex = 0;
 
 struct {
 	const gui::Window* windowPtr;
-	const gui::Color565 color;
+	const ColorAndOutline color;
 } const windowColorMapping[] = {
-	{.windowPtr = &animEagle1.window, .color = ILI9341_RED},
-	{.windowPtr = &lowPriorityAnimations[0].window, .color = ILI9341_YELLOW},
-	{.windowPtr = &lowPriorityAnimations[1].window, .color = ILI9341_YELLOW},
-	{.windowPtr = &lowPriorityAnimations[2].window, .color = ILI9341_YELLOW},
-	{.windowPtr = &lowPriorityAnimations[3].window, .color = ILI9341_YELLOW},
-	{.windowPtr = &lowPriorityAnimations[4].window, .color = ILI9341_YELLOW},
-	{.windowPtr = &lowPriorityAnimations[5].window, .color = ILI9341_YELLOW},
-	{.windowPtr = &lowPriorityAnimations[6].window, .color = ILI9341_YELLOW},
-	{.windowPtr = &lowPriorityAnimations[7].window, .color = ILI9341_YELLOW},
+	{.windowPtr = &animEagle1.window, .color = {.mainColor = ILI9341_RED, .outlineColor = OUTLINE_COLOR}},
+	{.windowPtr = &lowPriorityAnimations[0].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
+	{.windowPtr = &lowPriorityAnimations[1].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
+	{.windowPtr = &lowPriorityAnimations[2].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
+	{.windowPtr = &lowPriorityAnimations[3].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
+	{.windowPtr = &lowPriorityAnimations[4].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
+	{.windowPtr = &lowPriorityAnimations[5].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
+	{.windowPtr = &lowPriorityAnimations[6].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
+	{.windowPtr = &lowPriorityAnimations[7].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
 	
 };
 
@@ -179,22 +185,22 @@ static void clearWithGrid(gui::Position pos, gui::Size size){
 	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, LINE_COLOR, CLEAR_COLOR, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
 }
 
-static void drawWindowBitPixel(const gui::Window& window, gui::Color565 color, Option<gui::Position> clearPrevious = None<gui::Position>()){
+static void drawWindowBitPixel(const gui::Window& window, gui::Color565 color, Option<gui::Color565> maybeOutline = None<gui::Color565>(), Option<gui::Position> clearPrevious = None<gui::Position>()){
 	if(const gui::Position* p_clearPosition = clearPrevious.ptr_value()){
-		gui::drawWindowBitPixel(tft, window, color, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithGrid}));
+		gui::drawWindowBitPixel(tft, window, color, maybeOutline, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithGrid}));
 	}
 	else {
-		gui::drawWindowBitPixel(tft, window, color);
+		gui::drawWindowBitPixel(tft, window, color, maybeOutline);
 	}
 }
 
-static Option<gui::Color565> matchWindowWithColor(const gui::Window* windowPtr){
+static Option<ColorAndOutline> matchWindowWithColor(const gui::Window* windowPtr){
 	for(const auto& entry : windowColorMapping){
 		if(entry.windowPtr == windowPtr){
 			return Some(entry.color);
 		}
 	}
-	return None<gui::Color565>();
+	return None<ColorAndOutline>();
 }
 
 
@@ -377,12 +383,12 @@ void DisplayRGBModule::drawStaticContent(){
 	int16_t screenWidth = tft.width();
 	gui::Window logoWindow{10, 30, &DPS_LogoSmall};
 
-	drawWindowBitPixel(logoWindow, ILI9341_YELLOW);
+	drawWindowBitPixel(logoWindow, HELL_MAIN_COLOR, Some(OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y + 35, screenWidth, 4);
 
 	logoWindow.setPosition({10, 262});
 	logoWindow.forceUpdate();
-	drawWindowBitPixel(logoWindow, ILI9341_YELLOW);
+	drawWindowBitPixel(logoWindow, HELL_MAIN_COLOR, Some(OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y - 10, screenWidth, 4);
 
 	tft.drawRect(10, 90, 220,50, ILI9341_BLACK);
@@ -428,14 +434,14 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 	if(mb_redraw){
 
 		for(gui::Window& arrowWindow : arrowWindowSlots){
-			drawWindowBitPixel(arrowWindow, ILI9341_YELLOW, Some(arrowWindow.getPosition()));
+			drawWindowBitPixel(arrowWindow, HELL_MAIN_COLOR, Some(OUTLINE_COLOR), Some(arrowWindow.getPosition()));
 			arrowWindow.updated();
 		}
 
-		drawWindowBitPixel(slotUpperSelection, ILI9341_BLACK, Some(selectedUpperSlotPreviousPosition));
+		drawWindowBitPixel(slotUpperSelection, SELECTOR_COLOR, Some(SELECTOR_OUTLINE_COLOR), Some(selectedUpperSlotPreviousPosition));
 		slotUpperSelection.updated();
 
-		drawWindowBitPixel(slotLowerSelection, ILI9341_BLACK, Some(selectedLowerSlotPreviousPosition));
+		drawWindowBitPixel(slotLowerSelection, SELECTOR_COLOR, Some(SELECTOR_OUTLINE_COLOR), Some(selectedLowerSlotPreviousPosition));
 		slotLowerSelection.updated();
 
 		mb_redraw = false;
@@ -471,9 +477,9 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 		gui::AnimatedMovement& animation = lowPriorityAnimations[lowPriorityAnimationsIndex];
 		gui::Position oldPosition = animation.animateMovement();
 
-		Option<gui::Color565> maybeColor = matchWindowWithColor(&animation.window);
-		if(const gui::Color565* p_color = maybeColor.ptr_value()){
-			drawWindowBitPixel(animation.window, *p_color, Some(oldPosition));
+		Option<ColorAndOutline> maybeColor = matchWindowWithColor(&animation.window);
+		if(const ColorAndOutline* p_color = maybeColor.ptr_value()){
+			drawWindowBitPixel(animation.window, p_color->mainColor, Some(p_color->outlineColor), Some(oldPosition));
 			if(animation.isMirroredY()){
 				int16_t halfDisplayWidth = tft.width();
 
@@ -481,11 +487,11 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 				gui::Position oldPositionMirrored = oldPosition;
 				positionMirrored.y = 70 - (positionMirrored.y - halfDisplayWidth);
 				oldPositionMirrored.y = 70 - (oldPositionMirrored.y - halfDisplayWidth);	
-				drawWindowBitPixel(gui::Window(positionMirrored.x, positionMirrored.y, animation.window.getImageBuffer()), *p_color, Some(oldPositionMirrored));				
+				drawWindowBitPixel(gui::Window(positionMirrored.x, positionMirrored.y, animation.window.getImageBuffer()), p_color->mainColor, Some(p_color->outlineColor), Some(oldPositionMirrored));				
 			}
 		}
 		else {
-			drawWindowBitPixel(animation.window, ILI9341_PINK, Some(oldPosition));
+			drawWindowBitPixel(animation.window, ILI9341_PINK, None<gui::Color565>(), Some(oldPosition));
 		}
 		animation.window.updated();
 

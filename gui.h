@@ -290,9 +290,10 @@ int16_t lerp(int16_t start, int16_t end, uint16_t durationMs, uint16_t elapsedTt
 Position lerp(const Position& start, const Position& end, uint16_t durationMs, uint16_t elapsedTtimeMs);
 Color565 lerpColor565(Color565 color_start, Color565 color_end, uint16_t durationMs, uint16_t elapsedTtimeMs);
 
-void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 color, Option<gui::ClearSettings> maybeClear = None<gui::ClearSettings>());
+void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 color, Option<Color565> maybeOutlineColor = None<Color565>(), Option<gui::ClearSettings> maybeClear = None<gui::ClearSettings>());
 void drawHorizontalSeparatorWithBorders(Adafruit_ILI9341& tft, int16_t x, int16_t y, int16_t width, int16_t height);
 
+void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor);
 void drawGeneratedGridPattern(Adafruit_ILI9341& tft, int16_t topX, int16_t topY, int16_t width, int16_t height, int16_t gridSpacing, Color565 lineColor, Color565 backgroundColor, int16_t offsetX = 0, int16_t offsetY = 0);
 
 

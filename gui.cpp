@@ -100,7 +100,7 @@ Position AnimatedMovement::animateMovement(){
 
 
 
-void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 color, Option<ClearSettings> maybeClear){
+void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 mainColor, Option<Color565> maybeOutlineColor, Option<ClearSettings> maybeClear){
 	if(!window.needsUpdate()){
 		return;
 	}
@@ -118,18 +118,82 @@ void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::C
 		p_clearSettings->clearFn(p_clearSettings->position, windowSize);
 	}
 	if(!window.isHidden()){
-		tft.drawBitmap(windowPosition.x, windowPosition.y, imageBuffer->image, windowSize.width, windowSize.height, color);
+		Color565 outlineColor = mainColor;
+		if(const Color565* p_outlineColor = maybeOutlineColor.ptr_value()){
+			outlineColor = *p_outlineColor;
+		}
+		drawBitmapWithOutline(tft, imageBuffer->image, windowPosition.x, windowPosition.y, windowSize.width, windowSize.height, mainColor, outlineColor);
 	}
+}
+
+void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor){
+	const int16_t byteWidth = (width + 7) / 8; // Bitmap scanline pad = whole byte
+  	uint16_t currentByteLoadedIndex = 0;
+	uint8_t b = 0;
+	bool wasPreviousPointPixel = false;
+	
+
+	auto getByteIndexInBitset = [](int16_t x, int16_t y, int16_t byteWidth){
+		return y * byteWidth + x / 8;
+	};
+	tft.startWrite();
+	for (int16_t j = 0; j < height; j++, topY++) {
+		bool wasPreviousPointPixel = false;
+		for (int16_t i = 0; i < width; i++) {
+			if (i & 7){
+				b <<= 1;
+			}
+			else{
+				currentByteLoadedIndex = getByteIndexInBitset(i, j, byteWidth);
+				b = pgm_read_byte(&image[currentByteLoadedIndex]);
+			}
+
+			if (b & 0x80){
+				const bool neghborLeft = wasPreviousPointPixel;
+				Color565 pixelColor = mainColor;
+				if(!neghborLeft){
+					pixelColor = outlineColor;
+				}
+				else if(i == width - 1){
+					pixelColor = outlineColor;
+				}
+				else {
+					uint16_t rightNeighborByteIndex = getByteIndexInBitset(i + 1, j, byteWidth);
+					if(currentByteLoadedIndex == rightNeighborByteIndex){
+						const uint8_t neghborRight = (b << 1) & 0x80;
+						if (neghborRight == 0){
+							pixelColor = outlineColor;
+						}
+					}
+					else{
+						const uint8_t neghborRight = pgm_read_byte(&image[rightNeighborByteIndex]);
+						if((neghborRight & 0x80) == 0){
+							pixelColor = outlineColor;
+						} 
+					}
+					
+				}
+
+				tft.writePixel(topX + i, topY, pixelColor);
+				wasPreviousPointPixel = true;
+			}
+			else {
+				wasPreviousPointPixel = false;
+			}
+		}
+ 	 }
+  	tft.endWrite();
 }
 
 void drawHorizontalSeparatorWithBorders(Adafruit_ILI9341& tft, int16_t x, int16_t y, int16_t width, int16_t height){
 	width = max(8, width);
-	tft.drawFastHLine(x + 2, y - 2, 		width -7, ILI9341_LIGHTGREY);
+	tft.drawFastHLine(x + 2, y - 2, 		width -7, ILI9341_BLACK);
 	tft.drawFastHLine(x,     y - 1, 		width -4, ILI9341_DARKGREY);
 	tft.fillRoundRect(x,     y,     		width -3, height, 4, ILI9341_YELLOW);
 	tft.drawFastHLine(x,     y + height , 	width -4, ILI9341_DARKGREY);
-	tft.drawFastHLine(x + 2, y + height + 1,width -7, ILI9341_LIGHTGREY);
+	tft.drawFastHLine(x + 2, y + height + 1,width -7, ILI9341_BLACK);
 }
+
 
 
 // do not touch this functions, it's for some reason very fast, but only if packet buffer for width is 1

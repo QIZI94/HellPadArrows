@@ -36,9 +36,6 @@ public:
 
 	void wobble(uint32_t changeDirectionAfterMS);
 
-	Option<Arrow> getArrowFromSlot(uint8_t slot) const;
-	Option<uint8_t> getSelection() const;
-
 	uint8_t getTargetFPS() const;
 
 private:
@@ -50,12 +47,12 @@ private:
 	void drawDynamicContent(uint32_t delta);
 
 private:
-	Option<uint8_t> m_selectedSlot;
+	uint16_t mi_targetFpsDeltaMs = TARGET_FPS_DELTA_MS;
 	const char* ms_text = nullptr;
 	
 	
 
-	uint16_t mi_targetFpsDeltaMs = TARGET_FPS_DELTA_MS;
+	
 	bool mb_redraw = true;
 	bool mb_textChanged = false;
 	uint8_t mi_previousTextSize = 0;

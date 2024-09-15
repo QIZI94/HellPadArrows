@@ -47,8 +47,14 @@ struct MainModule : public module::ManagedModule{
             if(!m_blockInputTimed.isEnabled()){
                	module::Display.showArrow(*p_nextIndex, Some(arrow));
              	module::Display.showSlotSelection(Some<uint8_t>(*p_nextIndex));
-                
-
+                uint8_t sizeUsedSlots = (*p_nextIndex+1);
+                Option<Stratagem> maybePartialStratagem = m_arrowSlots.tryMatchStratagemFromSlots(Some(sizeUsedSlots));
+                if(Stratagem* p_stratagem = maybePartialStratagem.ptr_value()){
+                    module::Display.showText(ArrowSlots::GetStratagemName(*p_stratagem));
+                }
+                else {
+                    module::Display.showText(nullptr);
+                }
                 Option<Stratagem> maybeStratagem = m_arrowSlots.tryMatchStratagemFromSlots();
                 if(Stratagem* p_stratagem = maybeStratagem.ptr_value()){
                     Serial.print("Activated combination for: ");
@@ -66,6 +72,10 @@ struct MainModule : public module::ManagedModule{
 						Serial.println(s_stratagemName);
 					}*/
 					
+                }
+                else if(m_arrowSlots.getSlotsUsedCount() == ARROW_MAX_SLOTS){
+                    module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::FAIL);
+                    m_blockInputTimed.setup(timedUnlockInput,2000);
                 }
                 else {
                     module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::BUTTON_PRESS);
@@ -138,6 +148,13 @@ MainModule::InitializationState MainModule::init() {
 
 	module::Keyboard.keypad.addEventListener(processKeyEvents);
     
+    /*Arrow callin[ARROW_MAX_SLOTS];
+
+    uint8_t callinLenght = ArrowSlots::GetStratagemArrows(Stratagem::JumpPack, callin);
+    for(uint8_t arrowIdx = 0; arrowIdx < callinLenght; arrowIdx++){
+        module::Display.showArrow(arrowIdx, Some(callin[arrowIdx]));
+    }*/
+
     /*module::Display.showArrow(0, Some(Arrow::UP));
 	module::Display.showArrow(1, Some(Arrow::DOWN));
 	module::Display.showArrow(2, Some(Arrow::LEFT));

@@ -5,7 +5,7 @@ static const Arrow Stratagem_Bomb500kg[] = {
 };
 
 static const Arrow Stratagem_EagleSmokeStrike[] = {
-    Arrow::UP, Arrow::DOWN, Arrow::UP, Arrow::LEFT
+    Arrow::UP, Arrow::DOWN, Arrow::UP, Arrow::RIGHT
 };
 
 static const Arrow Stratagem_EagleAirstrike[] = {
@@ -60,11 +60,15 @@ Option<uint8_t> ArrowSlots::nextSlot(Arrow arrow){
     return None<uint8_t>();
 }
 
-Option<Stratagem> ArrowSlots::tryMatchStratagemFromSlots(){
+Option<Stratagem> ArrowSlots::tryMatchStratagemFromSlots(Option<uint8_t> maybeOverrideMatchLenght) const {
     
     for(StratagemMapping stratagem : Stratagems){
         uint8_t countMatched = 0;
-        uint8_t stratagemCallinLength = stratagem.stratagemCallinLength;
+        uint8_t stratagemCallinLength = maybeOverrideMatchLenght.hasValue() ?  *maybeOverrideMatchLenght.ptr_value() : stratagem.stratagemCallinLength;
+        
+        if(stratagemCallinLength > stratagem.stratagemCallinLength){
+            continue;
+        }
         for(uint8_t strataIdx = 0; strataIdx < stratagemCallinLength; strataIdx++ ){
             const Arrow stratagemArrow = stratagem.stratagemCallin[strataIdx];
             Option<Arrow> maybeArrow = m_slots[strataIdx];
@@ -92,6 +96,32 @@ void ArrowSlots::reset(){
         maybeArrow = None<Arrow>();
     }
 }
+
+uint8_t ArrowSlots::getSlotsUsedCount() const{
+    uint8_t slotsUsedCounter = 0;
+    for(const auto& slot : m_slots){
+        if(slot.hasValue()){
+            slotsUsedCounter++;
+        }
+    }
+    return slotsUsedCounter;
+}
+
+uint8_t ArrowSlots::GetStratagemArrows(Stratagem stratagem, Arrow* arrowsOut){
+    for(StratagemMapping stratagemEntry : Stratagems){
+		if(stratagemEntry.stratagemId == stratagem){
+            uint8_t stratagemCallinLength = stratagemEntry.stratagemCallinLength;
+            memcpy(
+                arrowsOut,
+                stratagemEntry.stratagemCallin,
+                stratagemCallinLength * sizeof(Arrow)
+            );
+			return stratagemCallinLength;
+		}
+	}
+    return 0;
+}
+
 
 const char* ArrowSlots::GetStratagemName(Stratagem stratagem){
 	for(StratagemMapping stratagemEntry : Stratagems){

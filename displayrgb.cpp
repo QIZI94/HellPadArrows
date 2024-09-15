@@ -35,7 +35,9 @@ constexpr int16_t GRID_LINES_OFFSET_Y 	= +5;
 constexpr int16_t GRID_SPACING 			= 29;
 
 constexpr int16_t ARROWS_TOP_OFFSET 	= 104;
-constexpr int16_t ARROWS_LEFT_OFFSET	= 27;
+constexpr int16_t ARROWS_LEFT_OFFSET	= 26;
+constexpr int16_t SELECTOR_ARROW_OFFSET = -3;
+
 
 constexpr int16_t ARROWS_LEFT_OFFSETS[ARROW_MAX_SLOTS] = {
 	0, 	
@@ -89,8 +91,8 @@ static gui::Window slotLowerSelection(
 );
 
 
-static gui::Position selectedUpperSlotPreviousPosition = slotUpperSelection.getPosition();
-static gui::Position selectedLowerSlotPreviousPosition = slotLowerSelection.getPosition();
+static gui::Position selectedUpperSlotPreviousPosition = {-100,-100};
+static gui::Position selectedLowerSlotPreviousPosition = {-100.-100};
 
 
 gui::AnimatedMovement animEagle1(
@@ -164,10 +166,10 @@ static uint8_t lowPriorityAnimationsIndex = 0;
 
 
 
-struct {
+struct WindowColorMapping {
 	const gui::Window* windowPtr;
 	const ColorAndOutline color;
-} const windowColorMapping[] = {
+} const PROGMEM windowColorMapping[] = {
 	{.windowPtr = &animEagle1.window, .color = {.mainColor = ILI9341_RED, .outlineColor = OUTLINE_COLOR}},
 	{.windowPtr = &lowPriorityAnimations[0].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
 	{.windowPtr = &lowPriorityAnimations[1].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
@@ -195,7 +197,9 @@ static void drawWindowBitPixel(const gui::Window& window, gui::Color565 color, O
 }
 
 static Option<ColorAndOutline> matchWindowWithColor(const gui::Window* windowPtr){
-	for(const auto& entry : windowColorMapping){
+	for(const WindowColorMapping& mappingEntry : windowColorMapping){
+		WindowColorMapping entry{nullptr, ColorAndOutline{0,0}};
+		PROGMEM_READ_STRUCTURE(&entry, &mappingEntry);
 		if(entry.windowPtr == windowPtr){
 			return Some(entry.color);
 		}
@@ -212,6 +216,9 @@ void DisplayRGBModule::setTargetFPS(uint8_t fps){
 
 void DisplayRGBModule::showText(const char *str_c){
 	//mi_ strlen(str_c)
+	if(ms_text == str_c){
+		return;
+	}
 	ms_text = str_c;
 	mb_textChanged = true;
 }
@@ -226,13 +233,10 @@ void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow) {
 					arrowWindow.setImageBuffer(entry.image);
 				}
 			}
-			
 		}
 		else {
 			arrowWindow.setHidden(true);
 		}
-		
-
 		update();
 	}
 }
@@ -240,11 +244,13 @@ void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow) {
 void DisplayRGBModule::showSlotSelection(Option<uint8_t> slot) {
 	if(const uint8_t* p_slot = slot.ptr_value()){
 		if(*p_slot < ARROW_MAX_SLOTS){
-			selectedUpperSlotPreviousPosition = slotUpperSelection.getPosition();
-			selectedLowerSlotPreviousPosition = slotLowerSelection.getPosition();
+			
+			selectedUpperSlotPreviousPosition = slotUpperSelection.isHidden() ? gui::Position{0,0} : slotUpperSelection.getPosition();
+			selectedLowerSlotPreviousPosition = slotLowerSelection.isHidden() ? gui::Position{0,0} :slotLowerSelection.getPosition();
 			//slotLowerSelection.setHidden(false);
 			gui::Position arrowSlotWindowPosition
 				= arrowWindowSlots[*p_slot].getPosition();
+			arrowSlotWindowPosition.x += SELECTOR_ARROW_OFFSET;
 			/*gui::Size arrowSlotWindowSize
 				= arrowWindowSlots[*p_slot].getImageBuffer();*/
 			arrowSlotWindowPosition.y = int16_t(arrowSlotWindowPosition.y + BIG_ARROW_HEIGHT + 5);
@@ -252,7 +258,8 @@ void DisplayRGBModule::showSlotSelection(Option<uint8_t> slot) {
 			slotLowerSelection.setHidden(false);
 
 			arrowSlotWindowPosition
-				= arrowWindowSlots[*p_slot].getPosition();		
+				= arrowWindowSlots[*p_slot].getPosition();	
+			arrowSlotWindowPosition.x += SELECTOR_ARROW_OFFSET;	
 			
 			arrowSlotWindowPosition.y = int16_t(arrowSlotWindowPosition.y - BIG_SELECTOR_HEIGHT - 5);
 			slotUpperSelection.setPosition(arrowSlotWindowPosition);
@@ -292,16 +299,6 @@ void DisplayRGBModule::wobble(uint32_t changeDirectionAfterMS){
 
 }
 
-Option<Arrow> DisplayRGBModule::getArrowFromSlot(uint8_t slot) const {
-
-
-	return None<Arrow>();;	
-}
-
-Option<uint8_t> DisplayRGBModule::getSelection() const
-{
-	return m_selectedSlot;
-}
 
 uint8_t DisplayRGBModule::getTargetFPS() const {
 	return 1000/mi_targetFpsDeltaMs;
@@ -328,7 +325,7 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	Serial.print("Self Diagnostic: 0x"); Serial.println(x, HEX);*/
 	
 	tft.setRotation(uint8_t(DisplayRGBModule::DEFAULT_ROTATION));
-	tft.setScrollMargins(0, 0);
+	tft.setScrollMargins(0, tft.height());
 
 	drawStaticContent();
 		
@@ -391,7 +388,25 @@ void DisplayRGBModule::drawStaticContent(){
 	drawWindowBitPixel(logoWindow, HELL_MAIN_COLOR, Some(OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y - 10, screenWidth, 4);
 
-	tft.drawRect(10, 90, 220,50, ILI9341_BLACK);
+	constexpr gui::Position slotFramePosition = {.x = 19, .y = 85};
+	constexpr gui::Size slotFrameSize = {.width = 201, .height = 62};
+
+	
+	tft.fillRect(
+		slotFramePosition.x, slotFramePosition.y,
+		slotFrameSize.width, slotFrameSize.height,
+		ILI9341_YELLOW
+	);
+	//clearWithGrid({19+4, 85+4}, {201-9,62 - 9});
+	tft.drawRect(
+		slotFramePosition.x+3,slotFramePosition.y+3,
+		slotFrameSize.width-6,slotFrameSize.height - 6,
+		ILI9341_BLACK
+	);
+	clearWithGrid(
+		{slotFramePosition.x+4, slotFramePosition.y+4},
+		{slotFrameSize.width-10,slotFrameSize.height - 10}
+	);
 
 /*
 	drawWindowBitPixel(gui::Window{25,100, &DPS_ArrowUpBMP}, ILI9341_YELLOW);
@@ -451,7 +466,7 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 		mi_previousTextSize = strlen(ms_text);
 
 		tft.setCursor(20, 180);
-		tft.setTextSize(2);
+		tft.setTextSize(1);
 		tft.setTextColor(ILI9341_ORANGE);
 		if(ms_text != nullptr){
 			tft.println(ms_text);
@@ -469,7 +484,7 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 		}*/
 		
 
-
+		
 		if(lowPriorityAnimationsIndex >= CONST_LENGTH(lowPriorityAnimations)){
 			lowPriorityAnimationsIndex = 0;
 		}

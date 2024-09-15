@@ -1,30 +1,30 @@
 #include "arrowslots.h"
 
-static const Arrow Stratagem_Bomb500kg[] = {
+static const PROGMEM Arrow Stratagem_Bomb500kg[] = {
     Arrow::UP, Arrow::LEFT, Arrow::RIGHT, Arrow::RIGHT, Arrow::RIGHT
 };
 
-static const Arrow Stratagem_EagleSmokeStrike[] = {
+static const PROGMEM Arrow Stratagem_EagleSmokeStrike[] = {
     Arrow::UP, Arrow::DOWN, Arrow::UP, Arrow::RIGHT
 };
 
-static const Arrow Stratagem_EagleAirstrike[] = {
+static const PROGMEM Arrow Stratagem_EagleAirstrike[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::RIGHT
 };
 
-static const Arrow Stratagem_EagleStrafingRun[] = {
+static const PROGMEM Arrow Stratagem_EagleStrafingRun[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::RIGHT
 };
 
-static const Arrow Stratagem_EagleClusterBomb[] = {
+static const PROGMEM Arrow Stratagem_EagleClusterBomb[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::DOWN, Arrow::RIGHT, Arrow::DOWN
 };
 
-static const Arrow Stratagem_JumpPack[] = {
+static const PROGMEM Arrow Stratagem_JumpPack[] = {
     Arrow::UP, Arrow::DOWN, Arrow::UP, Arrow::LEFT
 };
 
-static const Arrow Stratagem_Eagle110MMRocketPods[] = {
+static const PROGMEM Arrow Stratagem_Eagle110MMRocketPods[] = {
     Arrow::DOWN, Arrow::DOWN, Arrow::RIGHT, Arrow::RIGHT, Arrow::RIGHT
 };
 
@@ -34,8 +34,9 @@ struct StratagemMapping {
     const uint8_t stratagemCallinLength;
     const char* displayName;
 };
+constexpr static const StratagemMapping EMPTY_MAPPING{Stratagem::NUM_OF_STRATAGEMS, nullptr, 0, nullptr};
 
-static const StratagemMapping Stratagems[] = {
+static const PROGMEM StratagemMapping Stratagems[] = {
     {Stratagem::Bomb500kg, Stratagem_Bomb500kg, CONST_LENGTH(Stratagem_Bomb500kg), "500kg Bomb"},
     {Stratagem::EagleSmokeStrike, Stratagem_EagleSmokeStrike, CONST_LENGTH(Stratagem_EagleSmokeStrike), "Eagle Smoke Strike"},
     {Stratagem::EagleAirstrike, Stratagem_EagleAirstrike, CONST_LENGTH(Stratagem_EagleAirstrike), "Eagle Airstrike"},
@@ -62,15 +63,20 @@ Option<uint8_t> ArrowSlots::nextSlot(Arrow arrow){
 
 Option<Stratagem> ArrowSlots::tryMatchStratagemFromSlots(Option<uint8_t> maybeOverrideMatchLenght) const {
     
-    for(StratagemMapping stratagem : Stratagems){
-        uint8_t countMatched = 0;
+    for(const StratagemMapping& stratagemProgmem : Stratagems){
+
+		StratagemMapping stratagem = EMPTY_MAPPING;
+        PROGMEM_READ_STRUCTURE(&stratagem, &stratagemProgmem);
+		
+		uint8_t countMatched = 0;
         uint8_t stratagemCallinLength = maybeOverrideMatchLenght.hasValue() ?  *maybeOverrideMatchLenght.ptr_value() : stratagem.stratagemCallinLength;
         
         if(stratagemCallinLength > stratagem.stratagemCallinLength){
             continue;
         }
         for(uint8_t strataIdx = 0; strataIdx < stratagemCallinLength; strataIdx++ ){
-            const Arrow stratagemArrow = stratagem.stratagemCallin[strataIdx];
+            Arrow stratagemArrow = Arrow::DOWN;
+			PROGMEM_READ_STRUCTURE(&stratagemArrow, &stratagem.stratagemCallin[strataIdx]);
             Option<Arrow> maybeArrow = m_slots[strataIdx];
 
             if(const Arrow* p_arrow = maybeArrow.ptr_value()){
@@ -108,10 +114,12 @@ uint8_t ArrowSlots::getSlotsUsedCount() const{
 }
 
 uint8_t ArrowSlots::GetStratagemArrows(Stratagem stratagem, Arrow* arrowsOut){
-    for(StratagemMapping stratagemEntry : Stratagems){
+    for(const StratagemMapping& stratagemProgmemEntry : Stratagems){
+		StratagemMapping stratagemEntry = EMPTY_MAPPING;
+        PROGMEM_READ_STRUCTURE(&stratagemEntry, &stratagemProgmemEntry);
 		if(stratagemEntry.stratagemId == stratagem){
             uint8_t stratagemCallinLength = stratagemEntry.stratagemCallinLength;
-            memcpy(
+            memcpy_P(
                 arrowsOut,
                 stratagemEntry.stratagemCallin,
                 stratagemCallinLength * sizeof(Arrow)
@@ -124,7 +132,9 @@ uint8_t ArrowSlots::GetStratagemArrows(Stratagem stratagem, Arrow* arrowsOut){
 
 
 const char* ArrowSlots::GetStratagemName(Stratagem stratagem){
-	for(StratagemMapping stratagemEntry : Stratagems){
+	for(const StratagemMapping& stratagemProgmemEntry : Stratagems){
+		StratagemMapping stratagemEntry = EMPTY_MAPPING;
+        PROGMEM_READ_STRUCTURE(&stratagemEntry, &stratagemProgmemEntry);
 		if(stratagemEntry.stratagemId == stratagem){
 			return stratagemEntry.displayName;
 		}

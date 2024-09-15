@@ -19,6 +19,14 @@ public:
     const T* ptr_value() const {
         return mb_hasValue ? &m_value : nullptr;
     }
+
+	T& valueOr(T& other){
+		return mb_hasValue ? m_value : other;
+	}
+
+	const T& valueOr(const T& other){
+		return mb_hasValue ? m_value : other;
+	}
 private:
     T m_value;
     bool mb_hasValue = false;

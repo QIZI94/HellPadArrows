@@ -118,10 +118,7 @@ void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::C
 		p_clearSettings->clearFn(p_clearSettings->position, windowSize);
 	}
 	if(!window.isHidden()){
-		Color565 outlineColor = mainColor;
-		if(const Color565* p_outlineColor = maybeOutlineColor.ptr_value()){
-			outlineColor = *p_outlineColor;
-		}
+		Color565 outlineColor = maybeOutlineColor.valueOr(mainColor);
 		drawBitmapWithOutline(tft, imageBuffer->image, windowPosition.x, windowPosition.y, windowSize.width, windowSize.height, mainColor, outlineColor);
 	}
 }

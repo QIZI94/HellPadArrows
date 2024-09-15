@@ -61,15 +61,21 @@ Option<uint8_t> ArrowSlots::nextSlot(Arrow arrow){
     return None<uint8_t>();
 }
 
-Option<Stratagem> ArrowSlots::tryMatchStratagemFromSlots(Option<uint8_t> maybeOverrideMatchLenght) const {
+Option<Stratagem> ArrowSlots::tryMatchStratagemFromSlots(Option<uint8_t> maybeOverrideMatchLenght, Option<Stratagem> blacklistedStratagem) const {
     
     for(const StratagemMapping& stratagemProgmem : Stratagems){
 
 		StratagemMapping stratagem = EMPTY_MAPPING;
         PROGMEM_READ_STRUCTURE(&stratagem, &stratagemProgmem);
-		
+
+		if(const Stratagem* p_blacklistedStratagem = blacklistedStratagem.ptr_value()){
+			if(stratagem.stratagemId == *p_blacklistedStratagem){
+				continue;
+			}
+		}
+				
 		uint8_t countMatched = 0;
-        uint8_t stratagemCallinLength = maybeOverrideMatchLenght.hasValue() ?  *maybeOverrideMatchLenght.ptr_value() : stratagem.stratagemCallinLength;
+        uint8_t stratagemCallinLength = maybeOverrideMatchLenght.valueOr(stratagem.stratagemCallinLength);// .hasValue() ?  *maybeOverrideMatchLenght.ptr_value() : stratagem.stratagemCallinLength;
         
         if(stratagemCallinLength > stratagem.stratagemCallinLength){
             continue;

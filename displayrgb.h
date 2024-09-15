@@ -14,6 +14,11 @@ private:
 		South = 2,
 		West = 3
 	};
+public:
+	enum StratagemSuggestion{
+		PRIMARY = 0,
+		SECONDARY = 1
+	};
 
 private:
 	static constexpr DisplayRotation DEFAULT_ROTATION = DisplayRotation::South;
@@ -27,6 +32,9 @@ public:
 	void showText(const char* str_c);
 	void showArrow(uint8_t slot, Option<Arrow> arrow);
 	void showSlotSelection(Option<uint8_t> slot);
+
+	void showStratagemSuggestion(Option<Stratagem> maybeStratagem, StratagemSuggestion suggestion);
+
 
 	void setTargetFPS(uint8_t fps);
 
@@ -48,14 +56,10 @@ private:
 
 private:
 	uint16_t mi_targetFpsDeltaMs = TARGET_FPS_DELTA_MS;
-	const char* ms_text = nullptr;
-	
-	
-
-	
+	const char* ms_primarySuggestionText = nullptr;
+	const char* ms_secondarySuggestionText = nullptr;
 	bool mb_redraw = true;
 	bool mb_textChanged = false;
-	uint8_t mi_previousTextSize = 0;
 };
 
 inline DisplayRGBModule Display("DisplayRGBModule");

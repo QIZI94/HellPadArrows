@@ -36,9 +36,7 @@ struct MainModule : public module::ManagedModule{
     : ManagedModule(moduleInstanceName, autoenable) {}
 
     void handleArrowInput(Arrow arrow){
-        //module::Display.showArrow(0, Some(arrow));
-
-        Serial.print("Matched arrow: ");
+        //Serial.print("Matched arrow: ");
 		
 
         Option<uint8_t> nextSlotIndex = m_arrowSlots.nextSlot(arrow);
@@ -47,21 +45,23 @@ struct MainModule : public module::ManagedModule{
             if(!m_blockInputTimed.isEnabled()){
                	module::Display.showArrow(*p_nextIndex, Some(arrow));
              	module::Display.showSlotSelection(Some<uint8_t>(*p_nextIndex));
-                uint8_t sizeUsedSlots = (*p_nextIndex+1);
-                Option<Stratagem> maybePartialStratagem = m_arrowSlots.tryMatchStratagemFromSlots(Some(sizeUsedSlots));
+				/*
                 if(Stratagem* p_stratagem = maybePartialStratagem.ptr_value()){
                     module::Display.showText(ArrowSlots::GetStratagemName(*p_stratagem));
                 }
                 else {
                     module::Display.showText(nullptr);
-                }
+                }*/
                 Option<Stratagem> maybeStratagem = m_arrowSlots.tryMatchStratagemFromSlots();
                 if(Stratagem* p_stratagem = maybeStratagem.ptr_value()){
-                    Serial.print("Activated combination for: ");
+                    #ifdef DEBUG
+					Serial.print("Activated combination for: ");
 					Serial.println(ArrowSlots::GetStratagemName(*p_stratagem));
-					
+					#endif
 					module::Display.showSlotSelection(None<uint8_t>());
-					module::Display.showText(ArrowSlots::GetStratagemName(*p_stratagem));
+					module::Display.showStratagemSuggestion(None<Stratagem>(), module::DisplayRGBModule::StratagemSuggestion::SECONDARY);
+
+					module::Display.showStratagemSuggestion(maybeStratagem, module::DisplayRGBModule::StratagemSuggestion::PRIMARY);
 					module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::SUCCESS);
                     
 					m_blockInputTimed.setup(timedUnlockInput, 2000);
@@ -78,6 +78,11 @@ struct MainModule : public module::ManagedModule{
                     m_blockInputTimed.setup(timedUnlockInput,2000);
                 }
                 else {
+					uint8_t sizeUsedSlots = (*p_nextIndex+1);
+					Option<Stratagem> maybePartialStratagem = m_arrowSlots.tryMatchStratagemFromSlots(Some(sizeUsedSlots));
+					module::Display.showStratagemSuggestion(maybePartialStratagem, module::DisplayRGBModule::StratagemSuggestion::PRIMARY);
+					maybePartialStratagem = m_arrowSlots.tryMatchStratagemFromSlots(Some(sizeUsedSlots), maybePartialStratagem);
+					module::Display.showStratagemSuggestion(maybePartialStratagem, module::DisplayRGBModule::StratagemSuggestion::SECONDARY);
                     module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::BUTTON_PRESS);
                 }
             }
@@ -90,7 +95,7 @@ struct MainModule : public module::ManagedModule{
         else{
             module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::FAIL);
         }
-
+		#ifdef DEBUG
         switch (arrow)
         {
             case Arrow::UP:
@@ -109,6 +114,7 @@ struct MainModule : public module::ManagedModule{
                 Serial.println("Pressed Arrow::RIGHT");
                 break;
         }
+		#endif
     }
 
     InitializationState init() override;
@@ -136,8 +142,10 @@ static MainModule Main("MainModule");
 			if(Arrow* p_arrow = maybeArrow.ptr_value()){
 				Main.handleArrowInput(*p_arrow);
 			}
+			#ifdef DEBUG
 			Serial.print(key);
 			Serial.print(" ");
+			#endif
 		break;
 	}            
 } 

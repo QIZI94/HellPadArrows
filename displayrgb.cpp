@@ -7,6 +7,7 @@
 #include "display_resources.h"
 
 #include "timer.h"
+#include "arrowslots.h"
 
 
 struct ArrowToImageMapping{
@@ -30,16 +31,34 @@ constexpr gui::Color565 HELL_MAIN_COLOR 		= ILI9341_YELLOW;
 constexpr gui::Color565 OUTLINE_COLOR			= ILI9341_BLACK;
 constexpr gui::Color565 SELECTOR_COLOR			= ILI9341_RED;
 constexpr gui::Color565 SELECTOR_OUTLINE_COLOR	= ILI9341_BLACK;
+constexpr gui::Color565 TEXT_FRAME_BG_COLOR		= ILI9341_BLACK;
+
 constexpr int16_t GRID_LINES_OFFSET_X 	= +1;
 constexpr int16_t GRID_LINES_OFFSET_Y 	= +5;
-constexpr int16_t GRID_SPACING 			= 29;
+constexpr int16_t GRID_SPACING			= 29;
 
-constexpr int16_t ARROWS_TOP_OFFSET 	= 104;
-constexpr int16_t ARROWS_LEFT_OFFSET	= 26;
+constexpr int16_t ARROWS_OFFSET_X		= 26;
+constexpr int16_t ARROWS_OFFSET_Y		= 104;
 constexpr int16_t SELECTOR_ARROW_OFFSET = -3;
 
 
-constexpr int16_t ARROWS_LEFT_OFFSETS[ARROW_MAX_SLOTS] = {
+
+constexpr gui::Position TEXT_FRAME_POSITION = {.x = 19, .y = 160};
+constexpr gui::Size TEXT_FRAME_SIZE = {.width = 201, .height = 80};
+//32, 173
+constexpr int16_t TEXT_SUGGESTION_PRIMARY_POSITION_X	= TEXT_FRAME_POSITION.x+13;
+constexpr int16_t TEXT_SUGGESTION_PRIMARY_POSITION_Y	= TEXT_FRAME_POSITION.y+13;
+constexpr int16_t ARROWS_SUGGESTION_PRIMARY_OFFSET_X	= TEXT_FRAME_POSITION.x+20;
+constexpr int16_t ARROWS_SUGGESTION_PRIMARY_OFFSET_Y	= TEXT_FRAME_POSITION.y+24;
+
+//32, 205
+constexpr int16_t TEXT_SUGGESTION_SECONDARY_POSITION_X	= TEXT_FRAME_POSITION.x+13;
+constexpr int16_t TEXT_SUGGESTION_SECONDARY_POSITION_Y	= TEXT_FRAME_POSITION.y+45;
+constexpr int16_t ARROWS_SUGGESTION_SECONDARY_OFFSET_X	= TEXT_FRAME_POSITION.x+20;
+constexpr int16_t ARROWS_SUGGESTION_SECONDARY_OFFSET_Y	= TEXT_FRAME_POSITION.y+58;
+ 
+
+constexpr int16_t ARROWS_OFFSETS_HORIZONTAL[ARROW_MAX_SLOTS] = {
 	0, 	
 	27, 
 	54, 
@@ -47,6 +66,16 @@ constexpr int16_t ARROWS_LEFT_OFFSETS[ARROW_MAX_SLOTS] = {
 	108, 
 	135,
 	162,
+};
+
+constexpr int16_t ARROWS_TINY_OFFSETS_HORIZONTAL[ARROW_MAX_SLOTS] = {
+	0, 	
+	17, 
+	34, 
+	51, 
+	68, 
+	85,
+	102,
 };
 
 
@@ -63,31 +92,61 @@ static uint32_t averageSamples = 300;
 
 
 
-const ArrowToImageMapping imageMapping[]{
+const ArrowToImageMapping bigArrowMapping[]{
 	{Arrow::UP,		&DPS_ArrowUpBigBMP},
 	{Arrow::DOWN,	&DPS_ArrowDownBigBMP},
 	{Arrow::LEFT,	&DPS_ArrowLeftBigBMP},
 	{Arrow::RIGHT,	&DPS_ArrowRightBigBMP},
 };
 
+const ArrowToImageMapping tinyArrowMapping[]{
+	{Arrow::UP,		&DPS_ArrowUpTinyBMP},
+	{Arrow::DOWN,	&DPS_ArrowDownTinyBMP},
+	{Arrow::LEFT,	&DPS_ArrowLeftTinyBMP},
+	{Arrow::RIGHT,	&DPS_ArrowRightTinyBMP},
+};
+
 
 static gui::Window arrowWindowSlots[ARROW_MAX_SLOTS] = {
-	gui::Window(ARROWS_LEFT_OFFSETS[0] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
-	gui::Window(ARROWS_LEFT_OFFSETS[1] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
-	gui::Window(ARROWS_LEFT_OFFSETS[2] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
-	gui::Window(ARROWS_LEFT_OFFSETS[3] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
-	gui::Window(ARROWS_LEFT_OFFSETS[4] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
-	gui::Window(ARROWS_LEFT_OFFSETS[5] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
-	gui::Window(ARROWS_LEFT_OFFSETS[6] + ARROWS_LEFT_OFFSET, ARROWS_TOP_OFFSET, nullptr, true),
+	gui::Window(ARROWS_OFFSETS_HORIZONTAL[0] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+	gui::Window(ARROWS_OFFSETS_HORIZONTAL[1] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+	gui::Window(ARROWS_OFFSETS_HORIZONTAL[2] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+	gui::Window(ARROWS_OFFSETS_HORIZONTAL[3] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+	gui::Window(ARROWS_OFFSETS_HORIZONTAL[4] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+	gui::Window(ARROWS_OFFSETS_HORIZONTAL[5] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+	gui::Window(ARROWS_OFFSETS_HORIZONTAL[6] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+};
+
+static gui::Window suggestionArrows[][ARROW_MAX_SLOTS] = {
+	// PRIMARY SUGGESTION ARROWS
+	{
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[0] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[1] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[2] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[3] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[4] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[5] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[6] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
+	},
+	// SECONDARY SUGGESTION ARROWS
+	{
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[0] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[1] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[2] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[3] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[4] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[5] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[6] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
+	}
 };
 
 
 static gui::Window slotUpperSelection(
-	0, ARROWS_TOP_OFFSET - BIG_SELECTOR_HEIGHT - 5, &DPS_ArrowSelectorUpperBMP, true
+	0, ARROWS_OFFSET_Y - BIG_SELECTOR_HEIGHT - 5, &DPS_ArrowSelectorUpperBMP, true
 );
 
 static gui::Window slotLowerSelection(
-	0, ARROWS_TOP_OFFSET + BIG_ARROW_HEIGHT + 5, &DPS_ArrowSelectorLowerBMP, true
+	0, ARROWS_OFFSET_Y + BIG_ARROW_HEIGHT + 5, &DPS_ArrowSelectorLowerBMP, true
 );
 
 
@@ -183,9 +242,17 @@ struct WindowColorMapping {
 };
 
 
+static void clearWithBlack(gui::Position pos, gui::Size size){
+	tft.fillRect(pos.x, pos.y, size.width, size.height, ILI9341_BLACK);
+}
+
 static void clearWithGrid(gui::Position pos, gui::Size size){
 	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, LINE_COLOR, CLEAR_COLOR, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
 }
+/*
+static void clearWithGrid(gui::Position pos, gui::Size size){
+	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, ILI9341_DARKGREY, ILI9341_DARKGREEN, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
+}*/
 
 static void drawWindowBitPixel(const gui::Window& window, gui::Color565 color, Option<gui::Color565> maybeOutline = None<gui::Color565>(), Option<gui::Position> clearPrevious = None<gui::Position>()){
 	if(const gui::Position* p_clearPosition = clearPrevious.ptr_value()){
@@ -216,10 +283,10 @@ void DisplayRGBModule::setTargetFPS(uint8_t fps){
 
 void DisplayRGBModule::showText(const char *str_c){
 	//mi_ strlen(str_c)
-	if(ms_text == str_c){
+	/*if(ms_text == str_c){
 		return;
 	}
-	ms_text = str_c;
+	ms_text = str_c;*/
 	mb_textChanged = true;
 }
 
@@ -228,7 +295,7 @@ void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow) {
 		gui::Window& arrowWindow = arrowWindowSlots[slot];
 		if(const Arrow* p_arrow = arrow.ptr_value()){			
 			arrowWindow.setHidden(false);
-			for(const ArrowToImageMapping& entry : imageMapping){
+			for(const ArrowToImageMapping& entry : bigArrowMapping){
 				if(entry.arrow == *p_arrow){
 					arrowWindow.setImageBuffer(entry.image);
 				}
@@ -275,6 +342,56 @@ void DisplayRGBModule::showSlotSelection(Option<uint8_t> slot) {
 	
 	
 }
+void DisplayRGBModule::showStratagemSuggestion(Option<Stratagem> maybeStratagem, StratagemSuggestion suggestion){
+	Stratagem stratagem = maybeStratagem.valueOr(Stratagem::NUM_OF_STRATAGEMS);
+	const char* s_stratagemDisplayName = ArrowSlots::GetStratagemName(stratagem);
+
+	switch(suggestion) {
+		case StratagemSuggestion::PRIMARY:
+			if(ms_primarySuggestionText != s_stratagemDisplayName){
+				ms_primarySuggestionText = s_stratagemDisplayName;
+			}
+			else {
+				return;
+			}
+	
+		break;
+
+		case StratagemSuggestion::SECONDARY:
+			if(ms_secondarySuggestionText != s_stratagemDisplayName){
+				ms_secondarySuggestionText = s_stratagemDisplayName;
+			}
+			else {
+				return;
+			}
+		break;
+	}
+	
+	Arrow arrowCombination[ARROW_MAX_SLOTS];
+	uint8_t arrowCombinationLength = ArrowSlots::GetStratagemArrows(stratagem, arrowCombination);
+
+	gui::Window (&suggestionArrowsEntry)[ARROW_MAX_SLOTS] = suggestionArrows[size_t(suggestion)];
+	for(uint8_t suggestionSlotIdx = 0; suggestionSlotIdx < ARROW_MAX_SLOTS; suggestionSlotIdx++){
+		bool showArrow = suggestionSlotIdx < arrowCombinationLength;
+		gui::Window& suggestionArrow = suggestionArrowsEntry[suggestionSlotIdx];
+		//suggestionArrowsEntry[arrowIdx].
+		if(showArrow){
+			Arrow arrow = arrowCombination[suggestionSlotIdx];
+			for(const ArrowToImageMapping& entry : tinyArrowMapping){
+				if(entry.arrow == arrow){
+					suggestionArrow.setImageBuffer(entry.image);
+				}
+			}
+		}
+		
+		suggestionArrowsEntry[suggestionSlotIdx].setHidden(!showArrow);
+		
+	}	
+
+	mb_textChanged = true;
+}
+
+
 
 void DisplayRGBModule::reset() {
 	for(gui::Window& arrowWindow : arrowWindowSlots){
@@ -287,7 +404,8 @@ void DisplayRGBModule::reset() {
 
 	//m_selectedSlot = None<uint8_t>();
 
-	showText(nullptr);
+	showStratagemSuggestion(None<Stratagem>(), PRIMARY);
+	showStratagemSuggestion(None<Stratagem>(), SECONDARY);
 	update();
 }
 
@@ -325,10 +443,29 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	Serial.print("Self Diagnostic: 0x"); Serial.println(x, HEX);*/
 	
 	tft.setRotation(uint8_t(DisplayRGBModule::DEFAULT_ROTATION));
+	tft.setTextSize(1);
 	tft.setScrollMargins(0, tft.height());
 
 	drawStaticContent();
-		
+	
+	/*for(gui::Window& primaryArrowWindow : primarySuggestionArrows){
+		primaryArrowWindow.setImageBuffer(&DPS_ArrowRightTinyBMP);
+		primaryArrowWindow.setHidden(false);
+	}
+
+	for(gui::Window& secondaryArrowWindow : secondarySuggestionArrows){
+		secondaryArrowWindow.setImageBuffer(&DPS_ArrowDownTinyBMP);
+		secondaryArrowWindow.setHidden(false);
+	}*/
+	/*for(auto& suggestionArrowsEntry : suggestionArrows){
+		for(gui::Window& suggestionArrow : suggestionArrowsEntry){
+			
+			
+			suggestionArrow.setImageBuffer(&DPS_ArrowDownTinyBMP);
+			suggestionArrow.setHidden(false);
+		}
+	}*/
+
 	//timedAnimation.setup(anim, 10);
 	frameStartTime = millis();
 	return InitializationState::Initialized;
@@ -343,10 +480,10 @@ void DisplayRGBModule::run(){
 		frameStartTime = millis();
 		drawDynamicContent(delta);	
 
-		uint32_t fps = 1000/delta;
+		/*uint32_t fps = 1000/delta;
 
-		tft.fillRect(10, 220, 35, 15, CLEAR_COLOR);	
-		tft.setCursor(10, 220);
+		tft.fillRect(10, 0, 35, 15, CLEAR_COLOR);	
+		tft.setCursor(10, 0);
 		tft.setTextColor(ILI9341_WHITE); 
 		tft.setTextSize(2);
 		char s_fps[6];
@@ -360,13 +497,13 @@ void DisplayRGBModule::run(){
 			averageSamples++;
 		}
 		else {
-			tft.fillRect(50, 220, 35, 15, CLEAR_COLOR);
+			tft.fillRect(50, 0, 35, 15, CLEAR_COLOR);
 			itoa(averageFPS / averageSamples, s_fps, 10);
-			tft.setCursor(50, 220);
+			tft.setCursor(50, 0);
 			tft.println(s_fps);
 			averageFPS = averageFPS / averageSamples;
 			averageSamples = 0;
-		}
+		}*/
 
 		
 	}
@@ -407,6 +544,44 @@ void DisplayRGBModule::drawStaticContent(){
 		{slotFramePosition.x+4, slotFramePosition.y+4},
 		{slotFrameSize.width-10,slotFrameSize.height - 10}
 	);
+
+
+	tft.fillRect(
+		TEXT_FRAME_POSITION.x, TEXT_FRAME_POSITION.y,
+		TEXT_FRAME_SIZE.width, TEXT_FRAME_SIZE.height,
+		ILI9341_YELLOW
+	);
+	//clearWithGrid({19+4, 85+4}, {201-9,62 - 9});
+	tft.drawRect(
+		TEXT_FRAME_POSITION.x+3,TEXT_FRAME_POSITION.y+3,
+		TEXT_FRAME_SIZE.width-6,TEXT_FRAME_SIZE.height - 6,
+		ILI9341_DARKGREY
+	);
+	tft.fillRect(
+		TEXT_FRAME_POSITION.x+4, TEXT_FRAME_POSITION.y+4,
+		TEXT_FRAME_SIZE.width-8,TEXT_FRAME_SIZE.height - 8,
+		TEXT_FRAME_BG_COLOR
+	);
+
+	//arrow placeholder
+
+/*
+	gui::Window w = primarySuggestionArrows[7];
+	w.setPosition({TEXT_FRAME_POSITION.x+15, TEXT_FRAME_POSITION.y+25});
+	w.setImageBuffer(tinyArrowMapping[0].image);
+	w.setImageBuffer(tinyArrowMapping[1].image);
+	w.setImageBuffer(tinyArrowMapping[2].image);
+	w.setImageBuffer(tinyArrowMapping[3].image);
+	w.setHidden(false);
+	drawWindowBitPixel(w, HELL_MAIN_COLOR);
+
+	//arrow placeholder
+
+	tft.fillRect(
+		TEXT_FRAME_POSITION.x+15, TEXT_FRAME_POSITION.y+57,
+		11,11,
+		HELL_MAIN_COLOR
+	);*/
 
 /*
 	drawWindowBitPixel(gui::Window{25,100, &DPS_ArrowUpBMP}, ILI9341_YELLOW);
@@ -462,15 +637,51 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 		mb_redraw = false;
 	}
 	else if(mb_textChanged) {
-		clearWithGrid({20,180}, {int16_t(13*mi_previousTextSize), 16});
-		mi_previousTextSize = strlen(ms_text);
+		// PRIMARY SUGGESTION
+		clearWithBlack(
+			{TEXT_SUGGESTION_PRIMARY_POSITION_X, TEXT_SUGGESTION_PRIMARY_POSITION_Y},
+			{175, 8}
+		);
 
-		tft.setCursor(20, 180);
-		tft.setTextSize(1);
+		tft.setCursor(32, 173);
 		tft.setTextColor(ILI9341_ORANGE);
-		if(ms_text != nullptr){
-			tft.println(ms_text);
+		tft.println(ms_primarySuggestionText);
+
+		/*for(gui::Window& primaryArrowWindow : primarySuggestionArrows){
+			
+			//drawWindowBitPixel(primaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(primaryArrowWindow.getPosition()));
+			gui::drawWindowBitPixel(tft, primaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(gui::ClearSettings{.position = primaryArrowWindow.getPosition(), .clearFn = clearWithBlack}));
+			primaryArrowWindow.updated();
+		}*/
+
+		// SECONDARY SUGGESTION
+		clearWithBlack(
+			{TEXT_SUGGESTION_SECONDARY_POSITION_X, TEXT_SUGGESTION_SECONDARY_POSITION_Y},
+			{175, 8}
+		);
+
+		tft.setCursor(TEXT_SUGGESTION_SECONDARY_POSITION_X, TEXT_SUGGESTION_SECONDARY_POSITION_Y);
+		tft.setTextColor(ILI9341_GREENYELLOW);
+		tft.println(ms_secondarySuggestionText);
+		
+		for(auto& suggestionArrowsEntry : suggestionArrows){
+			for(gui::Window& suggestionArrow : suggestionArrowsEntry){
+				
+				//drawWindowBitPixel(primaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(primaryArrowWindow.getPosition()));
+				gui::drawWindowBitPixel(tft, suggestionArrow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(gui::ClearSettings{.position = suggestionArrow.getPosition(), .clearFn = clearWithBlack}));
+				suggestionArrow.updated();
+			}
 		}
+/*
+		for(gui::Window& secondaryArrowWindow : secondarySuggestionArrows){
+			
+			//drawWindowBitPixel(primaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(primaryArrowWindow.getPosition()));
+			gui::drawWindowBitPixel(tft, secondaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(gui::ClearSettings{.position = secondaryArrowWindow.getPosition(), .clearFn = clearWithBlack}));
+			secondaryArrowWindow.updated();
+		}
+*/
+
+
 
 		mb_textChanged = false;
 	}

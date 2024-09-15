@@ -24,6 +24,80 @@ inline const PROGMEM gui::ImageBuffer DPS_SmallStarOneBMP = {
 	}
 };
 
+inline const PROGMEM gui::ImageBuffer DPS_ArrowRightTinyBMP = {
+	.size = {.width = 11, .height = 11},
+	.image = {
+		//              x 
+		0b00000100, 0b00000000,
+        0b00000110, 0b00000000,
+		0b00000111, 0b00000000,
+		0b00000111, 0b10000000,
+		0b11111111, 0b11000000,
+		0b11111111, 0b11100000,
+		0b11111111, 0b11000000,
+		0b00000111, 0b10000000,
+		0b00000111, 0b00000000,
+		0b00000110, 0b00000000,
+		0b00000100, 0b00000000,
+	}
+};
+
+
+inline const PROGMEM gui::ImageBuffer DPS_ArrowLeftTinyBMP = {
+	.size = {.width = 11, .height = 11},
+	.image = {
+		//              x 
+		0b00000100, 0b00000000,
+        0b00001100, 0b00000000,
+		0b00011100, 0b00000000,
+		0b00111100, 0b00000000,
+		0b01111111, 0b11111111,
+		0b11111111, 0b11111111,
+		0b01111111, 0b11111111,
+		0b00111100, 0b00000000,
+		0b00011100, 0b00000000,
+		0b00001100, 0b00000000,
+		0b00000100, 0b00000000,
+	}
+};
+
+inline const PROGMEM gui::ImageBuffer DPS_ArrowUpTinyBMP = {
+	.size = {.width = 11, .height = 11},
+	.image = {
+		//              x 
+		0b00000100, 0b00000000,
+        0b00001110, 0b00000000,
+		0b00011111, 0b00000000,
+		0b00111111, 0b10000000,
+		0b01111111, 0b11000000,
+		0b11111111, 0b11100000,
+		0b00001110, 0b00000000,
+		0b00001110, 0b00000000,
+		0b00001110, 0b00000000,
+		0b00001110, 0b00000000,
+		0b00001110, 0b00000000,
+	}
+};
+
+inline const PROGMEM gui::ImageBuffer DPS_ArrowDownTinyBMP = {
+	.size = {.width = 11, .height = 11},
+	.image = {
+		//              x 
+		0b00001110, 0b00000000,
+        0b00001110, 0b00000000,
+		0b00001110, 0b00000000,
+		0b00001110, 0b00000000,
+		0b00001110, 0b00000000,
+		0b11111111, 0b11100000,
+		0b01111111, 0b11000000,
+		0b00111111, 0b10000000,
+		0b00011111, 0b00000000,
+		0b00001110, 0b00000000,
+		0b00000100, 0b00000000,
+	}
+};
+
+
 constexpr uint8_t ARROW_WIDTH 	= 19;
 constexpr uint8_t ARROW_HEIGHT 	= 19;
 

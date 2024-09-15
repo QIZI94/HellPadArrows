@@ -119,7 +119,7 @@ public:
 #else
 public: 
 	constexpr Window(int16_t x, int16_t y, const ImageBuffer* imageBuffer, bool isHidden = false)
-	 : position(Position{x, y}), b_isHidden(isHidden), b_needsUpdate(true), imageBuffer(imageBuffer) {}
+	 : position(Position{x, y}), b_isHidden(isHidden), b_needsUpdate(!isHidden), imageBuffer(imageBuffer) {}
 
 	inline void forceUpdate() {
 		b_needsUpdate = true;

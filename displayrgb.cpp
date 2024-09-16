@@ -281,15 +281,6 @@ void DisplayRGBModule::setTargetFPS(uint8_t fps){
 	mi_targetFpsDeltaMs = 1000/uint16_t(fps);
 }
 
-void DisplayRGBModule::showText(const char *str_c){
-	//mi_ strlen(str_c)
-	/*if(ms_text == str_c){
-		return;
-	}
-	ms_text = str_c;*/
-	mb_textChanged = true;
-}
-
 void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow) {
 	if(slot < ARROW_MAX_SLOTS) {
 		gui::Window& arrowWindow = arrowWindowSlots[slot];
@@ -392,6 +383,26 @@ void DisplayRGBModule::showStratagemSuggestion(Option<Stratagem> maybeStratagem,
 }
 
 
+void DisplayRGBModule::showOutcome(Option<Stratagem> maybeStratagem, bool show = true){
+	const char* outcomeText;
+	if(!show){
+		outcomeText = nullptr;
+	}
+	else if(const Stratagem* p_stratagem = maybeStratagem.ptr_value()){
+		outcomeText = "SUCCESSFUL";
+		mb_wasSuccessful = true;
+	}
+	else{
+		mb_wasSuccessful = false;
+		outcomeText = "FAILED";
+	}
+	
+	mb_outcomeChanged = outcomeText != ms_outcomeText;
+	ms_outcomeText = outcomeText;
+	
+	
+}
+
 
 void DisplayRGBModule::reset() {
 	for(gui::Window& arrowWindow : arrowWindowSlots){
@@ -406,6 +417,11 @@ void DisplayRGBModule::reset() {
 
 	showStratagemSuggestion(None<Stratagem>(), PRIMARY);
 	showStratagemSuggestion(None<Stratagem>(), SECONDARY);
+	
+	showOutcome(None<Stratagem>(), false);
+
+	wobble(1800, 5);
+
 	update();
 }
 
@@ -413,8 +429,11 @@ void DisplayRGBModule::update(){
 	mb_redraw = true;
 }
 
-void DisplayRGBModule::wobble(uint32_t changeDirectionAfterMS){
-
+void DisplayRGBModule::wobble(uint16_t timeToWobble, uint16_t amountOfWobble){
+	mi_wobbleTargetTime = timeToWobble;
+	mi_wobbleStart = 0;
+	mi_wobbleStop = amountOfWobble;
+	mi_wobbleStartTime = millis();
 }
 
 
@@ -444,7 +463,7 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	
 	tft.setRotation(uint8_t(DisplayRGBModule::DEFAULT_ROTATION));
 	tft.setTextSize(1);
-	tft.setScrollMargins(0, tft.height());
+	//tft.setScrollMargins(0, tft.height());
 
 	drawStaticContent();
 	
@@ -562,7 +581,7 @@ void DisplayRGBModule::drawStaticContent(){
 		TEXT_FRAME_SIZE.width-8,TEXT_FRAME_SIZE.height - 8,
 		TEXT_FRAME_BG_COLOR
 	);
-
+	
 	//arrow placeholder
 
 /*
@@ -620,6 +639,26 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 		}
 	}*/
 
+	//if(mi_wobbleAmountY != 0){
+		uint16_t elapsedTime = millis() - mi_wobbleStartTime;
+		
+		int16_t newPosition = gui::lerp(mi_wobbleStart, mi_wobbleStop, mi_wobbleTargetTime, elapsedTime);
+		
+
+		//Serial.println(newPosition);
+		tft.scrollTo(newPosition);
+		//delay(1000);
+		if(elapsedTime > mi_wobbleTargetTime){
+			int16_t tmp = mi_wobbleStop;
+			mi_wobbleStop = mi_wobbleStart;
+			mi_wobbleStart = tmp;
+			mi_wobbleStartTime = millis();
+			
+		}
+	//}
+	
+	
+
 
 	if(mb_redraw){
 
@@ -643,10 +682,10 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 			{175, 8}
 		);
 
-		tft.setCursor(32, 173);
+		tft.setCursor(TEXT_SUGGESTION_PRIMARY_POSITION_X, TEXT_SUGGESTION_PRIMARY_POSITION_Y);
 		tft.setTextColor(ILI9341_ORANGE);
 		tft.println(ms_primarySuggestionText);
-
+		
 		/*for(gui::Window& primaryArrowWindow : primarySuggestionArrows){
 			
 			//drawWindowBitPixel(primaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(primaryArrowWindow.getPosition()));
@@ -684,6 +723,14 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 
 
 		mb_textChanged = false;
+	}
+	else if(mb_outcomeChanged){
+		int16_t outcomeTextX = mb_wasSuccessful ? 90 : 95;
+		clearWithGrid({ int16_t(outcomeTextX -10), 73}, {70, 8});
+		tft.setCursor(outcomeTextX, 73);
+		tft.setTextColor(mb_wasSuccessful ? ILI9341_GREEN : ILI9341_RED);
+		tft.println(ms_outcomeText);
+		mb_outcomeChanged = false;
 	}
 	// IDLE
 	else {

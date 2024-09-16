@@ -29,6 +29,7 @@ static Option<Arrow> matchKeyToArrow(char key){
 
 void timedUnlockInput(TimedExecution10ms&);
 void timedLibertyStartup(TimedExecution10ms&);
+void timedWobbleStop(TimedExecution10ms&);
 
 struct MainModule : public module::ManagedModule{
 
@@ -63,6 +64,7 @@ struct MainModule : public module::ManagedModule{
 
 					module::Display.showStratagemSuggestion(maybeStratagem, module::DisplayRGBModule::StratagemSuggestion::PRIMARY);
 					module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::SUCCESS);
+					module::Display.showOutcome(maybeStratagem, true);
                     
 					m_blockInputTimed.setup(timedUnlockInput, 2000);
                     m_libertyDelayTimed.setup(timedLibertyStartup, 1000);
@@ -75,12 +77,14 @@ struct MainModule : public module::ManagedModule{
                 }
                 else if(m_arrowSlots.getSlotsUsedCount() == ARROW_MAX_SLOTS){
                     module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::FAIL);
+					module::Display.showOutcome(None<Stratagem>(), true);
                     m_blockInputTimed.setup(timedUnlockInput,2000);
                 }
                 else {
 					uint8_t sizeUsedSlots = (*p_nextIndex+1);
 					Option<Stratagem> maybePartialStratagem = m_arrowSlots.tryMatchStratagemFromSlots(Some(sizeUsedSlots));
 					module::Display.showStratagemSuggestion(maybePartialStratagem, module::DisplayRGBModule::StratagemSuggestion::PRIMARY);
+					
 					maybePartialStratagem = m_arrowSlots.tryMatchStratagemFromSlots(Some(sizeUsedSlots), maybePartialStratagem);
 					module::Display.showStratagemSuggestion(maybePartialStratagem, module::DisplayRGBModule::StratagemSuggestion::SECONDARY);
                     module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::BUTTON_PRESS);
@@ -90,11 +94,19 @@ struct MainModule : public module::ManagedModule{
         // out of slots
         else if(!m_blockInputTimed.isEnabled()){
             module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::FAIL);
+			module::Display.showOutcome(None<Stratagem>(), true);
             m_blockInputTimed.setup(timedUnlockInput,2000);
         }
         else{
+			
             module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::FAIL);
         }
+
+
+		if(m_blockInputTimed.isEnabled()){
+			module::Display.wobble(200, 10);
+			m_wobbleStopTimed.setup(timedWobbleStop, 500);
+		}
 		#ifdef DEBUG
         switch (arrow)
         {
@@ -127,6 +139,7 @@ struct MainModule : public module::ManagedModule{
 
     TimedExecution10ms m_blockInputTimed;
     TimedExecution10ms m_libertyDelayTimed;
+	TimedExecution10ms m_wobbleStopTimed;
 
     
     //Option<Arrow> slots[ARROW_MAX_SLOTS];
@@ -141,6 +154,9 @@ static MainModule Main("MainModule");
 			Option<Arrow> maybeArrow = matchKeyToArrow(key); 
 			if(Arrow* p_arrow = maybeArrow.ptr_value()){
 				Main.handleArrowInput(*p_arrow);
+			}
+			if(key == '8'){
+				module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::BUTTON_PRESS);
 			}
 			#ifdef DEBUG
 			Serial.print(key);
@@ -181,4 +197,8 @@ void timedUnlockInput(TimedExecution10ms&){
 
 void timedLibertyStartup(TimedExecution10ms&){
     module::Buzzer.playPreset(module::BuzzerSoundsModule::LIBER_TEA);
+}
+
+void timedWobbleStop(TimedExecution10ms&){
+	module::Display.wobble(1800, 5);
 }

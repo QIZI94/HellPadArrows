@@ -29,12 +29,12 @@ public:
     DisplayRGBModule(const char* moduleInstanceName, bool autoenable = true)
     : ManagedModule(moduleInstanceName, autoenable) {}
 
-	void showText(const char* str_c);
 	void showArrow(uint8_t slot, Option<Arrow> arrow);
 	void showSlotSelection(Option<uint8_t> slot);
 
 	void showStratagemSuggestion(Option<Stratagem> maybeStratagem, StratagemSuggestion suggestion);
 
+	void showOutcome(Option<Stratagem> maybeStratagem, bool wasSuccessful);
 
 	void setTargetFPS(uint8_t fps);
 
@@ -42,7 +42,7 @@ public:
 
 	void update();
 
-	void wobble(uint32_t changeDirectionAfterMS);
+	void wobble(uint16_t timeToWobble, uint16_t amountOfWobble);
 
 	uint8_t getTargetFPS() const;
 
@@ -56,10 +56,21 @@ private:
 
 private:
 	uint16_t mi_targetFpsDeltaMs = TARGET_FPS_DELTA_MS;
+
+	uint16_t mi_wobbleStartTime = 0;
+	uint16_t mi_wobbleTargetTime = 1800;
+	int16_t mi_wobbleStart = 0;
+	int16_t mi_wobbleStop = 5;
+
 	const char* ms_primarySuggestionText = nullptr;
 	const char* ms_secondarySuggestionText = nullptr;
+	const char* ms_outcomeText = nullptr;
+
 	bool mb_redraw = true;
 	bool mb_textChanged = false;
+	bool mb_outcomeChanged = false;
+
+	bool mb_wasSuccessful = false;
 };
 
 inline DisplayRGBModule Display("DisplayRGBModule");

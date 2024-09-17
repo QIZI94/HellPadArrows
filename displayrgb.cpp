@@ -231,15 +231,16 @@ struct WindowColorMapping {
 	const ColorAndOutline color;
 } const PROGMEM windowColorMapping[] = {
 	//{.windowPtr = &animEagle1.window, .color = {.mainColor = ILI9341_RED, .outlineColor = OUTLINE_COLOR}},
-	{.windowPtr = &lowPriorityAnimations[0].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
-	{.windowPtr = &lowPriorityAnimations[1].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
-	{.windowPtr = &lowPriorityAnimations[2].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
+	//{.windowPtr = &lowPriorityAnimations[0].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
+	//{.windowPtr = &lowPriorityAnimations[1].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
+	
+	/*{.windowPtr = &lowPriorityAnimations[2].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
 	{.windowPtr = &lowPriorityAnimations[3].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
 	{.windowPtr = &lowPriorityAnimations[4].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
 	{.windowPtr = &lowPriorityAnimations[5].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
 	{.windowPtr = &lowPriorityAnimations[6].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
 	{.windowPtr = &lowPriorityAnimations[7].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
-	
+	*/
 };
 
 
@@ -272,7 +273,7 @@ static ColorAndOutline matchWindowWithColor(const gui::Window* windowPtr){
 			return entry.color;
 		}
 	}
-	return ColorAndOutline{.mainColor = ILI9341_PINK, .outlineColor = ILI9341_BLACK};
+	return ColorAndOutline{.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR};
 }
 
 

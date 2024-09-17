@@ -25,12 +25,23 @@ constexpr uint8_t ARROW_MAX_SLOTS = 7;
 
 
 enum class Stratagem{
+	// orbital
+	OrbitalGatlingBarrage,
+	OrbitalAirburstStrike,
+	Orbital120MM_HEBarrage,
+	Orbital380MM_HEBarrage,
+	OrbitalWalkingBarrage,
+	OrbitalLaser,
+	OrbitalRailcannonStrike,
+
+	// eagle1
     Bomb500kg,
     EagleSmokeStrike,
     EagleAirstrike,
     EagleStrafingRun,
     EagleClusterBomb,
-    JumpPack,
+	EagleNapalmAirstrike,
+    //JumpPack,
     Eagle110MMRocketPod,
     
     NUM_OF_STRATAGEMS

@@ -1,11 +1,43 @@
 #include "arrowslots.h"
 
+// orbital
+
+static const PROGMEM Arrow Stratagem_OrbitalGatlingBarrage[] = {
+    Arrow::RIGHT, Arrow::DOWN, Arrow::LEFT, Arrow::UP, Arrow::UP
+};
+
+static const PROGMEM Arrow Stratagem_OrbitalAirburstStrike[] = {
+    Arrow::RIGHT, Arrow::RIGHT, Arrow::RIGHT
+};
+
+static const PROGMEM Arrow Stratagem_Orbital120MM_HEBarrage[] = {
+    Arrow::RIGHT, Arrow::DOWN, Arrow::LEFT, Arrow::RIGHT, Arrow::DOWN
+};
+
+static const PROGMEM Arrow Stratagem_Orbital380MM_HEBarrage[] = {
+   Arrow::RIGHT, Arrow::DOWN, Arrow::UP, Arrow::UP, Arrow::LEFT, Arrow::DOWN, Arrow::DOWN
+};
+
+static const PROGMEM Arrow Stratagem_OrbitalWalkingBarrage[] = {
+    Arrow::RIGHT, Arrow::RIGHT, Arrow::DOWN, Arrow::LEFT, Arrow::RIGHT, Arrow::DOWN
+};
+
+static const PROGMEM Arrow Stratagem_OrbitalLaser[] = {
+    Arrow::RIGHT, Arrow::DOWN, Arrow::UP, Arrow::RIGHT, Arrow::DOWN
+};
+
+static const PROGMEM Arrow Stratagem_OrbitalRailcannonStrike[] = {
+    Arrow::RIGHT, Arrow::UP, Arrow::DOWN, Arrow::DOWN, Arrow::RIGHT
+};
+
+// eagle1
+
 static const PROGMEM Arrow Stratagem_Bomb500kg[] = {
-    Arrow::UP, Arrow::LEFT, Arrow::RIGHT, Arrow::RIGHT, Arrow::RIGHT
+    Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::DOWN, Arrow::DOWN
 };
 
 static const PROGMEM Arrow Stratagem_EagleSmokeStrike[] = {
-    Arrow::UP, Arrow::DOWN, Arrow::UP, Arrow::RIGHT
+    Arrow::UP, Arrow::RIGHT, Arrow::UP, Arrow::DOWN
 };
 
 static const PROGMEM Arrow Stratagem_EagleAirstrike[] = {
@@ -17,32 +49,48 @@ static const PROGMEM Arrow Stratagem_EagleStrafingRun[] = {
 };
 
 static const PROGMEM Arrow Stratagem_EagleClusterBomb[] = {
-    Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::DOWN, Arrow::RIGHT, Arrow::DOWN
+    Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::DOWN, Arrow::RIGHT
 };
 
-static const PROGMEM Arrow Stratagem_JumpPack[] = {
-    Arrow::UP, Arrow::DOWN, Arrow::UP, Arrow::LEFT
+static const PROGMEM Arrow Stratagem_EagleNapalmAirstrike[] = {
+   Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::UP
 };
+
+
+/*static const PROGMEM Arrow Stratagem_JumpPack[] = {
+    Arrow::UP, Arrow::DOWN, Arrow::UP, Arrow::LEFT
+};*/
 
 static const PROGMEM Arrow Stratagem_Eagle110MMRocketPods[] = {
-    Arrow::DOWN, Arrow::DOWN, Arrow::RIGHT, Arrow::RIGHT, Arrow::RIGHT
+    Arrow::UP, Arrow::RIGHT, Arrow::UP, Arrow::LEFT
 };
 
 struct StratagemMapping {
     const Stratagem stratagemId;
     const Arrow* stratagemCallin;
     const uint8_t stratagemCallinLength;
-    const char* displayName;
+    const char displayName[26];
 };
-constexpr static const StratagemMapping EMPTY_MAPPING{Stratagem::NUM_OF_STRATAGEMS, nullptr, 0, nullptr};
+constexpr static const StratagemMapping EMPTY_MAPPING{Stratagem::NUM_OF_STRATAGEMS, nullptr, 0, ""};
 
 static const PROGMEM StratagemMapping Stratagems[] = {
+	// orbital
+	{Stratagem::OrbitalGatlingBarrage, Stratagem_OrbitalGatlingBarrage, CONST_LENGTH(Stratagem_OrbitalGatlingBarrage), "Orbital Gatling Barrage"},
+    {Stratagem::OrbitalAirburstStrike, Stratagem_OrbitalAirburstStrike, CONST_LENGTH(Stratagem_OrbitalAirburstStrike), "Orbital Airburst Strike"},
+    {Stratagem::Orbital120MM_HEBarrage, Stratagem_Orbital120MM_HEBarrage, CONST_LENGTH(Stratagem_Orbital120MM_HEBarrage), "Orbital 120MM HE Barrage"},
+    {Stratagem::Orbital380MM_HEBarrage, Stratagem_Orbital380MM_HEBarrage, CONST_LENGTH(Stratagem_Orbital380MM_HEBarrage), "Orbital 380MM HE Barrage"},
+    {Stratagem::OrbitalWalkingBarrage, Stratagem_OrbitalWalkingBarrage, CONST_LENGTH(Stratagem_OrbitalWalkingBarrage), "Orbital Walking Barrage"},
+	{Stratagem::OrbitalLaser, Stratagem_OrbitalLaser, CONST_LENGTH(Stratagem_OrbitalLaser), "Orbital Laser"},
+    {Stratagem::OrbitalRailcannonStrike, Stratagem_OrbitalRailcannonStrike, CONST_LENGTH(Stratagem_Eagle110MMRocketPods), "Orbital Railcannon Strike"},
+
+	// eagle1
     {Stratagem::Bomb500kg, Stratagem_Bomb500kg, CONST_LENGTH(Stratagem_Bomb500kg), "500kg Bomb"},
     {Stratagem::EagleSmokeStrike, Stratagem_EagleSmokeStrike, CONST_LENGTH(Stratagem_EagleSmokeStrike), "Eagle Smoke Strike"},
     {Stratagem::EagleAirstrike, Stratagem_EagleAirstrike, CONST_LENGTH(Stratagem_EagleAirstrike), "Eagle Airstrike"},
     {Stratagem::EagleStrafingRun, Stratagem_EagleStrafingRun, CONST_LENGTH(Stratagem_EagleStrafingRun), "Eagle Strafing Run"},
     {Stratagem::EagleClusterBomb, Stratagem_EagleClusterBomb, CONST_LENGTH(Stratagem_EagleClusterBomb), "Eagle Cluster Bomb"},
-    {Stratagem::JumpPack, Stratagem_JumpPack, CONST_LENGTH(Stratagem_JumpPack), "Jump Pack"},
+	{Stratagem::EagleNapalmAirstrike, Stratagem_EagleNapalmAirstrike, CONST_LENGTH(Stratagem_EagleNapalmAirstrike), "Eagle Napalm Airstrike"},
+    //{Stratagem::JumpPack, Stratagem_JumpPack, CONST_LENGTH(Stratagem_JumpPack), "Jump Pack"},
     {Stratagem::Eagle110MMRocketPod, Stratagem_Eagle110MMRocketPods, CONST_LENGTH(Stratagem_Eagle110MMRocketPods), "Eagle 110mm Rocket Pods"},
 
 };

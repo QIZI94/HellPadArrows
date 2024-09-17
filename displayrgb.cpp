@@ -28,6 +28,7 @@ struct ColorAndOutline{
 constexpr gui::Color565 CLEAR_COLOR 			= ILI9341_DARKCYAN;
 constexpr gui::Color565 LINE_COLOR 				= ILI9341_NAVY;
 constexpr gui::Color565 HELL_MAIN_COLOR 		= ILI9341_YELLOW;
+constexpr gui::Color565 INVALID_COMBINATION_COLOR = ILI9341_RED;
 constexpr gui::Color565 OUTLINE_COLOR			= ILI9341_BLACK;
 constexpr gui::Color565 SELECTOR_COLOR			= ILI9341_RED;
 constexpr gui::Color565 SELECTOR_OUTLINE_COLOR	= ILI9341_BLACK;
@@ -85,10 +86,10 @@ Adafruit_ILI9341 tft(
 	Pinout::Assignment::TFT_DC
 );
 
-static TimedExecution10ms timedAnimation;
 static uint32_t frameStartTime = 0;
 static uint32_t averageFPS = 0;
 static uint32_t averageSamples = 300;
+static gui::Color565 slotArrowColor = HELL_MAIN_COLOR; 
 
 
 
@@ -154,12 +155,12 @@ static gui::Position selectedUpperSlotPreviousPosition = {-100,-100};
 static gui::Position selectedLowerSlotPreviousPosition = {-100.-100};
 
 
-gui::AnimatedMovement animEagle1(
+/*gui::AnimatedMovement animEagle1(
 	gui::Window(0, 0, &DPS_Eagle1),
 	gui::Position{0, 100},	gui::Position{200, 100},
 	2000,
 	true
-);
+);*/
 
 
 static gui::AnimatedMovement lowPriorityAnimations[] = {
@@ -229,7 +230,7 @@ struct WindowColorMapping {
 	const gui::Window* windowPtr;
 	const ColorAndOutline color;
 } const PROGMEM windowColorMapping[] = {
-	{.windowPtr = &animEagle1.window, .color = {.mainColor = ILI9341_RED, .outlineColor = OUTLINE_COLOR}},
+	//{.windowPtr = &animEagle1.window, .color = {.mainColor = ILI9341_RED, .outlineColor = OUTLINE_COLOR}},
 	{.windowPtr = &lowPriorityAnimations[0].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
 	{.windowPtr = &lowPriorityAnimations[1].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
 	{.windowPtr = &lowPriorityAnimations[2].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
@@ -263,15 +264,15 @@ static void drawWindowBitPixel(const gui::Window& window, gui::Color565 color, O
 	}
 }
 
-static Option<ColorAndOutline> matchWindowWithColor(const gui::Window* windowPtr){
+static ColorAndOutline matchWindowWithColor(const gui::Window* windowPtr){
 	for(const WindowColorMapping& mappingEntry : windowColorMapping){
 		WindowColorMapping entry{nullptr, ColorAndOutline{0,0}};
 		PROGMEM_READ_STRUCTURE(&entry, &mappingEntry);
 		if(entry.windowPtr == windowPtr){
-			return Some(entry.color);
+			return entry.color;
 		}
 	}
-	return None<ColorAndOutline>();
+	return ColorAndOutline{.mainColor = ILI9341_PINK, .outlineColor = ILI9341_BLACK};
 }
 
 
@@ -390,11 +391,17 @@ void DisplayRGBModule::showOutcome(Option<Stratagem> maybeStratagem, bool show =
 	}
 	else if(const Stratagem* p_stratagem = maybeStratagem.ptr_value()){
 		outcomeText = "SUCCESSFUL";
+		slotArrowColor = HELL_MAIN_COLOR;
 		mb_wasSuccessful = true;
 	}
 	else{
 		mb_wasSuccessful = false;
+		slotArrowColor = INVALID_COMBINATION_COLOR;
 		outcomeText = "FAILED";
+	}
+
+	for(gui::Window& arrowWindowSlot : arrowWindowSlots){
+		arrowWindowSlot.forceUpdate();
 	}
 	
 	mb_outcomeChanged = outcomeText != ms_outcomeText;
@@ -421,6 +428,8 @@ void DisplayRGBModule::reset() {
 	showOutcome(None<Stratagem>(), false);
 
 	wobble(1800, 5);
+
+	slotArrowColor = HELL_MAIN_COLOR;
 
 	update();
 }
@@ -490,7 +499,6 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	return InitializationState::Initialized;
 }
 
-gui::Window flyingArrow{25, 130, &DPS_Eagle1};
 
 void DisplayRGBModule::run(){
 	uint32_t delta = millis() - frameStartTime;
@@ -663,7 +671,7 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 	if(mb_redraw){
 
 		for(gui::Window& arrowWindow : arrowWindowSlots){
-			drawWindowBitPixel(arrowWindow, HELL_MAIN_COLOR, Some(OUTLINE_COLOR), Some(arrowWindow.getPosition()));
+			drawWindowBitPixel(arrowWindow, slotArrowColor, Some(OUTLINE_COLOR), Some(arrowWindow.getPosition()));
 			arrowWindow.updated();
 		}
 
@@ -747,26 +755,31 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 			lowPriorityAnimationsIndex = 0;
 		}
 
-		gui::AnimatedMovement& animation = lowPriorityAnimations[lowPriorityAnimationsIndex];
-		gui::Position oldPosition = animation.animateMovement();
-
-		Option<ColorAndOutline> maybeColor = matchWindowWithColor(&animation.window);
-		if(const ColorAndOutline* p_color = maybeColor.ptr_value()){
-			drawWindowBitPixel(animation.window, p_color->mainColor, Some(p_color->outlineColor), Some(oldPosition));
-			if(animation.isMirroredY()){
-				int16_t halfDisplayWidth = tft.width();
-
-				gui::Position positionMirrored = animation.window.getPosition();
-				gui::Position oldPositionMirrored = oldPosition;
-				positionMirrored.y = 70 - (positionMirrored.y - halfDisplayWidth);
-				oldPositionMirrored.y = 70 - (oldPositionMirrored.y - halfDisplayWidth);	
-				drawWindowBitPixel(gui::Window(positionMirrored.x, positionMirrored.y, animation.window.getImageBuffer()), p_color->mainColor, Some(p_color->outlineColor), Some(oldPositionMirrored));				
+		gui::AnimatedMovement* p_animation;
+		gui::Position oldPosition;
+		do {
+			if(lowPriorityAnimationsIndex >= CONST_LENGTH(lowPriorityAnimations)){
+				return;
 			}
+			p_animation = &lowPriorityAnimations[lowPriorityAnimationsIndex];
+			oldPosition = p_animation->animateMovement();
+
+			lowPriorityAnimationsIndex++;
+		}while (!p_animation->window.needsUpdate());
+		
+		ColorAndOutline matchedColor = matchWindowWithColor(&p_animation->window);
+
+		drawWindowBitPixel(p_animation->window, matchedColor.mainColor, Some(matchedColor.outlineColor), Some(oldPosition));
+		if(p_animation->isMirroredY()){
+			int16_t halfDisplayWidth = tft.width();
+
+			gui::Position positionMirrored = p_animation->window.getPosition();
+			gui::Position oldPositionMirrored = oldPosition;
+			positionMirrored.y = 70 - (positionMirrored.y - halfDisplayWidth);
+			oldPositionMirrored.y = 70 - (oldPositionMirrored.y - halfDisplayWidth);	
+			drawWindowBitPixel(gui::Window(positionMirrored.x, positionMirrored.y, p_animation->window.getImageBuffer()), matchedColor.mainColor, Some(matchedColor.outlineColor), Some(oldPositionMirrored));				
 		}
-		else {
-			drawWindowBitPixel(animation.window, ILI9341_PINK, None<gui::Color565>(), Some(oldPosition));
-		}
-		animation.window.updated();
+		p_animation->window.updated();
 
 		lowPriorityAnimationsIndex++;
 	

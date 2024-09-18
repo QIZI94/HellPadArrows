@@ -40,56 +40,61 @@ struct MainModule : public module::ManagedModule{
         //Serial.print("Matched arrow: ");
 		
 
-        Option<uint8_t> nextSlotIndex = m_arrowSlots.nextSlot(arrow);
+        Option<uint8_t> nextSlotIndex = m_blockInputTimed.isEnabled() ? None<uint8_t>() : m_arrowSlots.nextSlot(arrow);
 
         if(uint8_t* p_nextIndex = nextSlotIndex.ptr_value()){
-            if(!m_blockInputTimed.isEnabled()){
-               	module::Display.showArrow(*p_nextIndex, Some(arrow));
-             	module::Display.showSlotSelection(Some<uint8_t>(*p_nextIndex));
-				/*
-                if(Stratagem* p_stratagem = maybePartialStratagem.ptr_value()){
-                    module::Display.showText(ArrowSlots::GetStratagemName(*p_stratagem));
-                }
-                else {
-                    module::Display.showText(nullptr);
-                }*/
-                Option<Stratagem> maybeStratagem = m_arrowSlots.tryMatchStratagemFromSlots();
-                if(Stratagem* p_stratagem = maybeStratagem.ptr_value()){
-                    #ifdef DEBUG
-					Serial.print("Activated combination for: ");
-					Serial.println(ArrowSlots::GetStratagemName(*p_stratagem));
-					#endif
-					module::Display.showSlotSelection(None<uint8_t>());
-					module::Display.showStratagemSuggestion(None<Stratagem>(), module::DisplayRGBModule::StratagemSuggestion::SECONDARY);
+			module::Display.showArrow(*p_nextIndex, Some(arrow));
+			module::Display.showSlotSelection(Some<uint8_t>(*p_nextIndex));
+			/*
+			if(Stratagem* p_stratagem = maybePartialStratagem.ptr_value()){
+				module::Display.showText(ArrowSlots::GetStratagemName(*p_stratagem));
+			}
+			else {
+				module::Display.showText(nullptr);
+			}*/
+			Option<Stratagem> maybeStratagem = m_arrowSlots.tryMatchStratagemFromSlots();
+			if(Stratagem* p_stratagem = maybeStratagem.ptr_value()){
+				#ifdef DEBUG
+				Serial.print("Activated combination for: ");
+				Serial.println(ArrowSlots::GetStratagemName(*p_stratagem));
+				#endif
+				module::Display.showSlotSelection(None<uint8_t>());
+				module::Display.showStratagemSuggestion(None<Stratagem>(), module::DisplayRGBModule::StratagemSuggestion::SECONDARY);
 
-					module::Display.showStratagemSuggestion(maybeStratagem, module::DisplayRGBModule::StratagemSuggestion::PRIMARY);
-					module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::SUCCESS);
-					module::Display.showOutcome(maybeStratagem, true);
-                    
-					m_blockInputTimed.setup(timedUnlockInput, 2000);
-                    m_libertyDelayTimed.setup(timedLibertyStartup, 1000);
-					/*Serial.print("SUCCESS: activated stratagem");
-					if(const char* s_stratagemName = ArrowSlots::GetStratagemName(*p_stratagem)){
-						Serial.print(" - ");
-						Serial.println(s_stratagemName);
-					}*/
-					
-                }
-                else if(m_arrowSlots.getSlotsUsedCount() == ARROW_MAX_SLOTS){
-                    module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::FAIL);
+				module::Display.showStratagemSuggestion(maybeStratagem, module::DisplayRGBModule::StratagemSuggestion::PRIMARY);
+				module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::SUCCESS);
+				module::Display.showOutcome(maybeStratagem, true);
+				
+				m_blockInputTimed.setup(timedUnlockInput, 2000);
+				m_libertyDelayTimed.setup(timedLibertyStartup, 1000);
+				/*Serial.print("SUCCESS: activated stratagem");
+				if(const char* s_stratagemName = ArrowSlots::GetStratagemName(*p_stratagem)){
+					Serial.print(" - ");
+					Serial.println(s_stratagemName);
+				}*/
+				
+			}
+			else if(m_arrowSlots.getSlotsUsedCount() == ARROW_MAX_SLOTS){
+				module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::FAIL);
+				module::Display.showOutcome(None<Stratagem>(), true);
+				m_blockInputTimed.setup(timedUnlockInput,2000);
+			}
+			else {
+				uint8_t sizeUsedSlots = (*p_nextIndex+1);
+				Option<Stratagem> maybePrimaryPartialStratagem = m_arrowSlots.tryMatchStratagemFromSlots(Some(sizeUsedSlots));
+				module::Display.showStratagemSuggestion(maybePrimaryPartialStratagem, module::DisplayRGBModule::StratagemSuggestion::PRIMARY);
+				
+				Option<Stratagem> maybeSecondaryPartialStratagem = m_arrowSlots.tryMatchStratagemFromSlots(Some(sizeUsedSlots), maybePrimaryPartialStratagem);
+				module::Display.showStratagemSuggestion(maybeSecondaryPartialStratagem, module::DisplayRGBModule::StratagemSuggestion::SECONDARY);
+				module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::BUTTON_PRESS);
+
+				if(!maybePrimaryPartialStratagem.hasValue() && !maybeSecondaryPartialStratagem.hasValue()){
+					module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::FAIL);
 					module::Display.showOutcome(None<Stratagem>(), true);
-                    m_blockInputTimed.setup(timedUnlockInput,2000);
-                }
-                else {
-					uint8_t sizeUsedSlots = (*p_nextIndex+1);
-					Option<Stratagem> maybePartialStratagem = m_arrowSlots.tryMatchStratagemFromSlots(Some(sizeUsedSlots));
-					module::Display.showStratagemSuggestion(maybePartialStratagem, module::DisplayRGBModule::StratagemSuggestion::PRIMARY);
-					
-					maybePartialStratagem = m_arrowSlots.tryMatchStratagemFromSlots(Some(sizeUsedSlots), maybePartialStratagem);
-					module::Display.showStratagemSuggestion(maybePartialStratagem, module::DisplayRGBModule::StratagemSuggestion::SECONDARY);
-                    module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::BUTTON_PRESS);
-                }
-            }
+					m_blockInputTimed.setup(timedUnlockInput,2000);
+				}
+			}
+           
         }
         // out of slots
         else if(!m_blockInputTimed.isEnabled()){
@@ -104,7 +109,7 @@ struct MainModule : public module::ManagedModule{
 
 
 		if(m_blockInputTimed.isEnabled()){
-			module::Display.wobble(200, 10);
+			module::Display.wobble(100, 10);
 			m_wobbleStopTimed.setup(timedWobbleStop, 500);
 		}
 		#ifdef DEBUG

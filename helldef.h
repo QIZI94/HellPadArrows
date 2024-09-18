@@ -103,5 +103,6 @@ struct Pinout{
 	};
 };
 
+inline const PROGMEM char EMPTY_PROGMEM_STRING[] = "";
 
 #endif

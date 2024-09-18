@@ -388,17 +388,17 @@ void DisplayRGBModule::showStratagemSuggestion(Option<Stratagem> maybeStratagem,
 void DisplayRGBModule::showOutcome(Option<Stratagem> maybeStratagem, bool show = true){
 	const char* outcomeText;
 	if(!show){
-		outcomeText = nullptr;
+		outcomeText = EMPTY_PROGMEM_STRING;
 	}
 	else if(const Stratagem* p_stratagem = maybeStratagem.ptr_value()){
-		outcomeText = "SUCCESSFUL";
+		outcomeText = PSTR("SUCCESSFUL");
 		slotArrowColor = HELL_MAIN_COLOR;
 		mb_wasSuccessful = true;
 	}
 	else{
 		mb_wasSuccessful = false;
 		slotArrowColor = INVALID_COMBINATION_COLOR;
-		outcomeText = "FAILED";
+		outcomeText = PSTR("FAILED");
 	}
 
 	for(gui::Window& arrowWindowSlot : arrowWindowSlots){
@@ -693,7 +693,7 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 
 		tft.setCursor(TEXT_SUGGESTION_PRIMARY_POSITION_X, TEXT_SUGGESTION_PRIMARY_POSITION_Y);
 		tft.setTextColor(ILI9341_ORANGE);
-		tft.println(ms_primarySuggestionText);
+		tft.println((const __FlashStringHelper*) ms_primarySuggestionText);
 		
 		/*for(gui::Window& primaryArrowWindow : primarySuggestionArrows){
 			
@@ -710,7 +710,7 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 
 		tft.setCursor(TEXT_SUGGESTION_SECONDARY_POSITION_X, TEXT_SUGGESTION_SECONDARY_POSITION_Y);
 		tft.setTextColor(ILI9341_GREENYELLOW);
-		tft.println(ms_secondarySuggestionText);
+		tft.println((const __FlashStringHelper*)ms_secondarySuggestionText);
 		
 		for(auto& suggestionArrowsEntry : suggestionArrows){
 			for(gui::Window& suggestionArrow : suggestionArrowsEntry){
@@ -738,7 +738,7 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 		clearWithGrid({ int16_t(outcomeTextX -10), 73}, {70, 8});
 		tft.setCursor(outcomeTextX, 73);
 		tft.setTextColor(mb_wasSuccessful ? ILI9341_GREEN : ILI9341_RED);
-		tft.println(ms_outcomeText);
+		tft.println((const __FlashStringHelper*)ms_outcomeText);
 		mb_outcomeChanged = false;
 	}
 	// IDLE

@@ -190,9 +190,9 @@ const char* ArrowSlots::GetStratagemName(Stratagem stratagem){
 		StratagemMapping stratagemEntry = EMPTY_MAPPING;
         PROGMEM_READ_STRUCTURE(&stratagemEntry, &stratagemProgmemEntry);
 		if(stratagemEntry.stratagemId == stratagem){
-			return stratagemEntry.displayName;
+			return stratagemProgmemEntry.displayName;
 		}
 	}
 
-	return nullptr;
+	return EMPTY_PROGMEM_STRING;
 }

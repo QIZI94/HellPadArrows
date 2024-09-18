@@ -62,9 +62,9 @@ private:
 	int16_t mi_wobbleStart = 0;
 	int16_t mi_wobbleStop = 5;
 
-	const char* ms_primarySuggestionText = nullptr;
-	const char* ms_secondarySuggestionText = nullptr;
-	const char* ms_outcomeText = nullptr;
+	const char* ms_primarySuggestionText = EMPTY_PROGMEM_STRING;
+	const char* ms_secondarySuggestionText = EMPTY_PROGMEM_STRING;
+	const char* ms_outcomeText = EMPTY_PROGMEM_STRING;
 
 	bool mb_redraw = true;
 	bool mb_textChanged = false;

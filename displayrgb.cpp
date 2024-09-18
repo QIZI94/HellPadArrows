@@ -787,7 +787,6 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 		}
 		p_animation->window.updated();
 
-		lowPriorityAnimationsIndex++;
 	
 
 		

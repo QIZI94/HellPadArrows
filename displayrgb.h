@@ -58,7 +58,7 @@ private:
 	uint16_t mi_targetFpsDeltaMs = TARGET_FPS_DELTA_MS;
 
 	uint16_t mi_wobbleStartTime = 0;
-	uint16_t mi_wobbleTargetTime = 1800;
+	uint16_t mi_wobbleTargetTime = 1700;
 	int16_t mi_wobbleStart = 0;
 	int16_t mi_wobbleStop = 5;
 

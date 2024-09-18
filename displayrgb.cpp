@@ -25,14 +25,13 @@ struct ColorAndOutline{
 
 
 
-constexpr gui::Color565 CLEAR_COLOR 			= ILI9341_DARKCYAN;
-constexpr gui::Color565 LINE_COLOR 				= ILI9341_NAVY;
-constexpr gui::Color565 HELL_MAIN_COLOR 		= ILI9341_YELLOW;
-constexpr gui::Color565 INVALID_COMBINATION_COLOR = ILI9341_RED;
-constexpr gui::Color565 OUTLINE_COLOR			= ILI9341_BLACK;
-constexpr gui::Color565 SELECTOR_COLOR			= ILI9341_RED;
-constexpr gui::Color565 SELECTOR_OUTLINE_COLOR	= ILI9341_BLACK;
-constexpr gui::Color565 TEXT_FRAME_BG_COLOR		= ILI9341_BLACK;
+constexpr gui::Color565 CLEAR_COLOR 					= gui::ConvertRGBtoRGB565(0,140,235);//ILI9341_DARKCYAN;
+constexpr gui::Color565 GRIDLINE_COLOR					= gui::ConvertRGBtoRGB565(0,140,240);//ILI9341_NAVY;
+constexpr gui::Color565 HELL_MAIN_COLOR 				= ILI9341_YELLOW;
+constexpr gui::Color565 INVALID_COMBINATION_COLOR		= gui::ConvertRGBtoRGB565(255,0,0);//ILI9341_RED;
+constexpr gui::Color565 OUTLINE_COLOR					= ILI9341_BLACK;
+constexpr gui::Color565 SELECTOR_COLOR					= gui::ConvertRGBtoRGB565(255,150,0);//ILI9341_ORANGE;
+constexpr gui::Color565 SELECTOR_OUTLINE_COLOR			= ILI9341_BLACK;
 
 constexpr int16_t GRID_LINES_OFFSET_X 	= +1;
 constexpr int16_t GRID_LINES_OFFSET_Y 	= +5;
@@ -143,11 +142,11 @@ static gui::Window suggestionArrows[][ARROW_MAX_SLOTS] = {
 
 
 static gui::Window slotUpperSelection(
-	0, ARROWS_OFFSET_Y - BIG_SELECTOR_HEIGHT - 5, &DPS_ArrowSelectorUpperBMP, true
+	640, ARROWS_OFFSET_Y - BIG_SELECTOR_HEIGHT - 5, &DPS_ArrowSelectorUpperBMP, true
 );
 
 static gui::Window slotLowerSelection(
-	0, ARROWS_OFFSET_Y + BIG_ARROW_HEIGHT + 5, &DPS_ArrowSelectorLowerBMP, true
+	640, ARROWS_OFFSET_Y + BIG_ARROW_HEIGHT + 5, &DPS_ArrowSelectorLowerBMP, true
 );
 
 
@@ -164,8 +163,8 @@ static gui::Position selectedLowerSlotPreviousPosition = {-100.-100};
 
 
 static gui::AnimatedMovement lowPriorityAnimations[] = {
-	/*gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_Eagle1),
+/*	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_SmallStarOneBMP),
 		gui::Position{0, 100},	gui::Position{200, 100},
 		2000,
 		true
@@ -222,7 +221,6 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 
 	
 };
-static uint8_t lowPriorityAnimationsIndex = 0;
 
 
 
@@ -243,13 +241,13 @@ struct WindowColorMapping {
 	*/
 };
 
-
-static void clearWithBlack(gui::Position pos, gui::Size size){
-	tft.fillRect(pos.x, pos.y, size.width, size.height, ILI9341_BLACK);
+static void clearWithDarkGrid(gui::Position pos, gui::Size size){
+	//tft.fillRect(pos.x, pos.y, size.width, size.height, ILI9341_BLACK);
+	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, gui::ConvertRGBtoRGB565(100,0,100), gui::ConvertRGBtoRGB565(70,70,70), GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
 }
 
 static void clearWithGrid(gui::Position pos, gui::Size size){
-	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, LINE_COLOR, CLEAR_COLOR, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
+	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, GRIDLINE_COLOR, CLEAR_COLOR, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
 }
 /*
 static void clearWithGrid(gui::Position pos, gui::Size size){
@@ -264,6 +262,16 @@ static void drawWindowBitPixel(const gui::Window& window, gui::Color565 color, O
 		gui::drawWindowBitPixel(tft, window, color, maybeOutline);
 	}
 }
+
+static void drawWindowBitPixelWithDarkGrid(const gui::Window& window, gui::Color565 color, Option<gui::Color565> maybeOutline = None<gui::Color565>(), Option<gui::Position> clearPrevious = None<gui::Position>()){
+	if(const gui::Position* p_clearPosition = clearPrevious.ptr_value()){
+		gui::drawWindowBitPixel(tft, window, color, maybeOutline, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithDarkGrid}));
+	}
+	else {
+		gui::drawWindowBitPixel(tft, window, color, maybeOutline);
+	}
+}
+
 
 static ColorAndOutline matchWindowWithColor(const gui::Window* windowPtr){
 	for(const WindowColorMapping& mappingEntry : windowColorMapping){
@@ -305,8 +313,8 @@ void DisplayRGBModule::showSlotSelection(Option<uint8_t> slot) {
 	if(const uint8_t* p_slot = slot.ptr_value()){
 		if(*p_slot < ARROW_MAX_SLOTS){
 			
-			selectedUpperSlotPreviousPosition = slotUpperSelection.isHidden() ? gui::Position{0,0} : slotUpperSelection.getPosition();
-			selectedLowerSlotPreviousPosition = slotLowerSelection.isHidden() ? gui::Position{0,0} :slotLowerSelection.getPosition();
+			selectedUpperSlotPreviousPosition = slotUpperSelection.isHidden() ? gui::Position{640,640} : slotUpperSelection.getPosition();
+			selectedLowerSlotPreviousPosition = slotLowerSelection.isHidden() ? gui::Position{640,640} : slotLowerSelection.getPosition();
 			//slotLowerSelection.setHidden(false);
 			gui::Position arrowSlotWindowPosition
 				= arrowWindowSlots[*p_slot].getPosition();
@@ -428,7 +436,7 @@ void DisplayRGBModule::reset() {
 	
 	showOutcome(None<Stratagem>(), false);
 
-	wobble(1800, 5);
+	wobble(1700, 5);
 
 	slotArrowColor = HELL_MAIN_COLOR;
 
@@ -549,7 +557,6 @@ void DisplayRGBModule::drawStaticContent(){
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y + 35, screenWidth, 4);
 
 	logoWindow.setPosition({10, 262});
-	logoWindow.forceUpdate();
 	drawWindowBitPixel(logoWindow, HELL_MAIN_COLOR, Some(OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y - 10, screenWidth, 4);
 
@@ -565,12 +572,12 @@ void DisplayRGBModule::drawStaticContent(){
 	//clearWithGrid({19+4, 85+4}, {201-9,62 - 9});
 	tft.drawRect(
 		slotFramePosition.x+3,slotFramePosition.y+3,
-		slotFrameSize.width-6,slotFrameSize.height - 6,
+		slotFrameSize.width-6,slotFrameSize.height-6,
 		ILI9341_BLACK
 	);
-	clearWithGrid(
+	clearWithDarkGrid(
 		{slotFramePosition.x+4, slotFramePosition.y+4},
-		{slotFrameSize.width-10,slotFrameSize.height - 10}
+		{slotFrameSize.width-10,slotFrameSize.height-10}
 	);
 
 
@@ -582,13 +589,12 @@ void DisplayRGBModule::drawStaticContent(){
 	//clearWithGrid({19+4, 85+4}, {201-9,62 - 9});
 	tft.drawRect(
 		TEXT_FRAME_POSITION.x+3,TEXT_FRAME_POSITION.y+3,
-		TEXT_FRAME_SIZE.width-6,TEXT_FRAME_SIZE.height - 6,
+		TEXT_FRAME_SIZE.width-6,TEXT_FRAME_SIZE.height-6,
 		ILI9341_DARKGREY
 	);
-	tft.fillRect(
-		TEXT_FRAME_POSITION.x+4, TEXT_FRAME_POSITION.y+4,
-		TEXT_FRAME_SIZE.width-8,TEXT_FRAME_SIZE.height - 8,
-		TEXT_FRAME_BG_COLOR
+	clearWithDarkGrid(
+		{TEXT_FRAME_POSITION.x+4, TEXT_FRAME_POSITION.y+4},
+		{TEXT_FRAME_SIZE.width-10,TEXT_FRAME_SIZE.height-8}
 	);
 	
 	//arrow placeholder
@@ -672,21 +678,21 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 	if(mb_redraw){
 
 		for(gui::Window& arrowWindow : arrowWindowSlots){
-			drawWindowBitPixel(arrowWindow, slotArrowColor, Some(OUTLINE_COLOR), Some(arrowWindow.getPosition()));
+			drawWindowBitPixelWithDarkGrid(arrowWindow, slotArrowColor, Some(OUTLINE_COLOR), Some(arrowWindow.getPosition()));
 			arrowWindow.updated();
 		}
 
-		drawWindowBitPixel(slotUpperSelection, SELECTOR_COLOR, Some(SELECTOR_OUTLINE_COLOR), Some(selectedUpperSlotPreviousPosition));
+		drawWindowBitPixelWithDarkGrid(slotUpperSelection, SELECTOR_COLOR, Some(SELECTOR_OUTLINE_COLOR), Some(selectedUpperSlotPreviousPosition));
 		slotUpperSelection.updated();
 
-		drawWindowBitPixel(slotLowerSelection, SELECTOR_COLOR, Some(SELECTOR_OUTLINE_COLOR), Some(selectedLowerSlotPreviousPosition));
+		drawWindowBitPixelWithDarkGrid(slotLowerSelection, SELECTOR_COLOR, Some(SELECTOR_OUTLINE_COLOR), Some(selectedLowerSlotPreviousPosition));
 		slotLowerSelection.updated();
 
 		mb_redraw = false;
 	}
 	else if(mb_textChanged) {
 		// PRIMARY SUGGESTION
-		clearWithBlack(
+		clearWithDarkGrid(
 			{TEXT_SUGGESTION_PRIMARY_POSITION_X, TEXT_SUGGESTION_PRIMARY_POSITION_Y},
 			{175, 8}
 		);
@@ -703,7 +709,7 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 		}*/
 
 		// SECONDARY SUGGESTION
-		clearWithBlack(
+		clearWithDarkGrid(
 			{TEXT_SUGGESTION_SECONDARY_POSITION_X, TEXT_SUGGESTION_SECONDARY_POSITION_Y},
 			{175, 8}
 		);
@@ -715,8 +721,7 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 		for(auto& suggestionArrowsEntry : suggestionArrows){
 			for(gui::Window& suggestionArrow : suggestionArrowsEntry){
 				
-				//drawWindowBitPixel(primaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(primaryArrowWindow.getPosition()));
-				gui::drawWindowBitPixel(tft, suggestionArrow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(gui::ClearSettings{.position = suggestionArrow.getPosition(), .clearFn = clearWithBlack}));
+				drawWindowBitPixelWithDarkGrid(suggestionArrow, HELL_MAIN_COLOR, None<gui::Color565>(), suggestionArrow.getPosition());
 				suggestionArrow.updated();
 			}
 		}
@@ -743,7 +748,7 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 	}
 	// IDLE
 	else {
-
+		static uint8_t lowPriorityAnimationsIndex = 0;
 		/*gui::Position oldPositionEagle1 = animEagle1.animateMovement();
 		Option<gui::Color565> maybeEagle1Color = matchWindowWithColor(&animEagle1.window);
 		if(const gui::Color565* p_color = maybeEagle1Color.ptr_value()){

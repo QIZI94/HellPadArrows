@@ -11,21 +11,6 @@
 namespace gui{
 
 
-static uint8_t getRed(Color565 color) {
-    return (color >> 11) & 0x1F; 
-}
-
-static uint8_t getGreen(Color565 color) {
-    return (color >> 5) & 0x3F; 
-}
-
-static uint8_t getBlue(Color565 color) {
-    return color & 0x1F; 
-}
-
-static Color565 combineRGB565(uint8_t r, uint8_t g, uint8_t b) {
-    return (r << 11) | (g << 5) | b; 
-}
 
 int16_t lerp(int16_t start, int16_t end, uint16_t durationMs, uint16_t elapsedTtimeMs) {
 	if(durationMs == 0){
@@ -48,19 +33,19 @@ Color565 lerpColor565(Color565 color_start, Color565 color_end, uint16_t duratio
 		return color_end;
 	}
 
-    uint8_t r_start = getRed(color_start);
-    uint8_t g_start = getGreen(color_start);
-    uint8_t b_start = getBlue(color_start);
+    uint8_t r_start = GetRedFromRGB565(color_start);
+    uint8_t g_start = GetGreenFromRGB565(color_start);
+    uint8_t b_start = GetBlueFromRGB565(color_start);
 
-    uint8_t r_end = getRed(color_end);
-    uint8_t g_end = getGreen(color_end);
-    uint8_t b_end = getBlue(color_end);
+    uint8_t r_end = GetRedFromRGB565(color_end);
+    uint8_t g_end = GetGreenFromRGB565(color_end);
+    uint8_t b_end = GetBlueFromRGB565(color_end);
 
     uint8_t r_lerp = lerp(r_start, r_end, durationMs, elapsedTtimeMs);
     uint8_t g_lerp = lerp(g_start, g_end, durationMs, elapsedTtimeMs);
     uint8_t b_lerp = lerp(b_start, b_end, durationMs, elapsedTtimeMs);
 
-    return combineRGB565(r_lerp, g_lerp, b_lerp);
+    return ConvertRGBtoRGB565(r_lerp, g_lerp, b_lerp);
 }
 
 

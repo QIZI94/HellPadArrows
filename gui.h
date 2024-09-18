@@ -286,6 +286,24 @@ struct ClearSettings {
 	ClearFuncPtr clearFn;
 };
 
+
+constexpr Color565 ConvertRGBtoRGB565(uint8_t r, uint8_t g, uint8_t b) {
+    return (r << 11) | (g << 5) | b; 
+}
+
+constexpr uint8_t GetRedFromRGB565(Color565 color) {
+    return (color >> 11) & 0x1F; 
+}
+
+constexpr uint8_t GetGreenFromRGB565(Color565 color) {
+    return (color >> 5) & 0x3F; 
+}
+
+constexpr uint8_t GetBlueFromRGB565(Color565 color) {
+    return color & 0x1F; 
+}
+
+
 int16_t lerp(int16_t start, int16_t end, uint16_t durationMs, uint16_t elapsedTtimeMs);
 Position lerp(const Position& start, const Position& end, uint16_t durationMs, uint16_t elapsedTtimeMs);
 Color565 lerpColor565(Color565 color_start, Color565 color_end, uint16_t durationMs, uint16_t elapsedTtimeMs);

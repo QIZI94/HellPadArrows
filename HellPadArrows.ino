@@ -1,7 +1,7 @@
 #include "shared/module.h"
 
 void initializationWatcher(const module::ManagedModule& module){
-	using InitState = module::ManagedModule::InitializationState;
+	/*using InitState = module::ManagedModule::InitializationState;
 	InitState moduleInitializationState = module.getInitializationState();
 
 	switch(moduleInitializationState){
@@ -27,7 +27,7 @@ void initializationWatcher(const module::ManagedModule& module){
 			break;
 	}
 
-	Serial.println(module.name());
+	Serial.println(module.name());*/
 }
 
 

@@ -41,8 +41,11 @@ enum class Stratagem{
     EagleStrafingRun,
     EagleClusterBomb,
 	EagleNapalmAirstrike,
-    //JumpPack,
+    JumpPack,
     Eagle110MMRocketPod,
+
+	// EXO suit
+	EXO45PatriotExosuit,
     
     NUM_OF_STRATAGEMS
 };

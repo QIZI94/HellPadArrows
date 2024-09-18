@@ -57,12 +57,16 @@ static const PROGMEM Arrow Stratagem_EagleNapalmAirstrike[] = {
 };
 
 
-/*static const PROGMEM Arrow Stratagem_JumpPack[] = {
-    Arrow::UP, Arrow::DOWN, Arrow::UP, Arrow::LEFT
-};*/
+static const PROGMEM Arrow Stratagem_JumpPack[] = {
+    Arrow::DOWN, Arrow::UP, Arrow::UP, Arrow::DOWN, Arrow::UP
+};
 
 static const PROGMEM Arrow Stratagem_Eagle110MMRocketPods[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::UP, Arrow::LEFT
+};
+
+static const PROGMEM Arrow 	Stratagem_EXO45PatriotExosuit[] = {
+    Arrow::LEFT, Arrow::DOWN, Arrow::RIGHT, Arrow::UP, Arrow::LEFT, Arrow::DOWN, Arrow::DOWN
 };
 
 struct StratagemMapping {
@@ -85,14 +89,16 @@ static const PROGMEM StratagemMapping Stratagems[] = {
 
 	// eagle1
     {Stratagem::Bomb500kg, Stratagem_Bomb500kg, CONST_LENGTH(Stratagem_Bomb500kg), "500kg Bomb"},
-    {Stratagem::EagleSmokeStrike, Stratagem_EagleSmokeStrike, CONST_LENGTH(Stratagem_EagleSmokeStrike), "Eagle Smoke Strike"},
+    //{Stratagem::EagleSmokeStrike, Stratagem_EagleSmokeStrike, CONST_LENGTH(Stratagem_EagleSmokeStrike), "Eagle Smoke Strike"},
     {Stratagem::EagleAirstrike, Stratagem_EagleAirstrike, CONST_LENGTH(Stratagem_EagleAirstrike), "Eagle Airstrike"},
-    {Stratagem::EagleStrafingRun, Stratagem_EagleStrafingRun, CONST_LENGTH(Stratagem_EagleStrafingRun), "Eagle Strafing Run"},
+    //{Stratagem::EagleStrafingRun, Stratagem_EagleStrafingRun, CONST_LENGTH(Stratagem_EagleStrafingRun), "Eagle Strafing Run"},
     {Stratagem::EagleClusterBomb, Stratagem_EagleClusterBomb, CONST_LENGTH(Stratagem_EagleClusterBomb), "Eagle Cluster Bomb"},
 	{Stratagem::EagleNapalmAirstrike, Stratagem_EagleNapalmAirstrike, CONST_LENGTH(Stratagem_EagleNapalmAirstrike), "Eagle Napalm Airstrike"},
-    //{Stratagem::JumpPack, Stratagem_JumpPack, CONST_LENGTH(Stratagem_JumpPack), "Jump Pack"},
+    {Stratagem::JumpPack, Stratagem_JumpPack, CONST_LENGTH(Stratagem_JumpPack), "Jump Pack"},
     {Stratagem::Eagle110MMRocketPod, Stratagem_Eagle110MMRocketPods, CONST_LENGTH(Stratagem_Eagle110MMRocketPods), "Eagle 110mm Rocket Pods"},
-
+	
+	// EXO suit
+	{Stratagem::EXO45PatriotExosuit, Stratagem_EXO45PatriotExosuit, CONST_LENGTH(Stratagem_EXO45PatriotExosuit), "EXO-45 Patriot Exosuit"},
 };
 
 Option<uint8_t> ArrowSlots::nextSlot(Arrow arrow){

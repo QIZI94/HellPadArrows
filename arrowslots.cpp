@@ -80,7 +80,7 @@ constexpr static const StratagemMapping EMPTY_MAPPING{Stratagem::NUM_OF_STRATAGE
 static const PROGMEM StratagemMapping Stratagems[] = {
 	// orbital
 	{Stratagem::OrbitalGatlingBarrage, Stratagem_OrbitalGatlingBarrage, CONST_LENGTH(Stratagem_OrbitalGatlingBarrage), "Orbital Gatling Barrage"},
-    {Stratagem::OrbitalAirburstStrike, Stratagem_OrbitalAirburstStrike, CONST_LENGTH(Stratagem_OrbitalAirburstStrike), "Orbital Airburst Strike"},
+    //{Stratagem::OrbitalAirburstStrike, Stratagem_OrbitalAirburstStrike, CONST_LENGTH(Stratagem_OrbitalAirburstStrike), "Orbital Airburst Strike"},
     {Stratagem::Orbital120MM_HEBarrage, Stratagem_Orbital120MM_HEBarrage, CONST_LENGTH(Stratagem_Orbital120MM_HEBarrage), "Orbital 120MM HE Barrage"},
     {Stratagem::Orbital380MM_HEBarrage, Stratagem_Orbital380MM_HEBarrage, CONST_LENGTH(Stratagem_Orbital380MM_HEBarrage), "Orbital 380MM HE Barrage"},
     {Stratagem::OrbitalWalkingBarrage, Stratagem_OrbitalWalkingBarrage, CONST_LENGTH(Stratagem_OrbitalWalkingBarrage), "Orbital Walking Barrage"},

@@ -43,7 +43,7 @@ constexpr int16_t SELECTOR_ARROW_OFFSET = -3;
 
 
 
-constexpr gui::Position TEXT_FRAME_POSITION = {.x = 19, .y = 160};
+constexpr gui::Position TEXT_FRAME_POSITION = {.x = 19, .y = 155};
 constexpr gui::Size TEXT_FRAME_SIZE = {.width = 201, .height = 80};
 //32, 173
 constexpr int16_t TEXT_SUGGESTION_PRIMARY_POSITION_X	= TEXT_FRAME_POSITION.x+13;
@@ -163,13 +163,21 @@ static gui::Position selectedLowerSlotPreviousPosition = {-100.-100};
 
 
 static gui::AnimatedMovement lowPriorityAnimations[] = {
-/*	gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_SmallStarOneBMP),
-		gui::Position{0, 100},	gui::Position{200, 100},
-		2000,
-		true
-	),*/
 
+// eagles ones
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_Eagle1Tiny),
+		gui::Position{-300, 72},	gui::Position{350, 72},
+		7000,
+		true
+	),
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_Eagle1TinyFlipped),
+		gui::Position{250, 237},	gui::Position{-350, 237},
+		7000,
+		true
+	),
+	
 
 // STARS
 	gui::AnimatedMovement(
@@ -589,12 +597,12 @@ void DisplayRGBModule::drawStaticContent(){
 	//clearWithGrid({19+4, 85+4}, {201-9,62 - 9});
 	tft.drawRect(
 		TEXT_FRAME_POSITION.x+3,TEXT_FRAME_POSITION.y+3,
-		TEXT_FRAME_SIZE.width-6,TEXT_FRAME_SIZE.height-6,
+		TEXT_FRAME_SIZE.width-6,TEXT_FRAME_SIZE.height-8,
 		ILI9341_DARKGREY
 	);
 	clearWithDarkGrid(
 		{TEXT_FRAME_POSITION.x+4, TEXT_FRAME_POSITION.y+4},
-		{TEXT_FRAME_SIZE.width-10,TEXT_FRAME_SIZE.height-8}
+		{TEXT_FRAME_SIZE.width-10,TEXT_FRAME_SIZE.height-10}
 	);
 	
 	//arrow placeholder
@@ -763,17 +771,22 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 
 		gui::AnimatedMovement* p_animation;
 		gui::Position oldPosition;
+		ColorAndOutline matchedColor{.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR};
+
 		do {
 			if(lowPriorityAnimationsIndex >= CONST_LENGTH(lowPriorityAnimations)){
 				return;
 			}
 			p_animation = &lowPriorityAnimations[lowPriorityAnimationsIndex];
 			oldPosition = p_animation->animateMovement();
-
+			if(lowPriorityAnimationsIndex < 2){
+				matchedColor.mainColor = matchedColor.outlineColor = ILI9341_RED;
+			}
 			lowPriorityAnimationsIndex++;
 		}while (!p_animation->window.needsUpdate());
 		
-		ColorAndOutline matchedColor = matchWindowWithColor(&p_animation->window);
+		//ColorAndOutline matchedColor// = matchWindowWithColor(&p_animation->window);
+		
 
 		drawWindowBitPixel(p_animation->window, matchedColor.mainColor, Some(matchedColor.outlineColor), Some(oldPosition));
 		if(p_animation->isMirroredY()){

@@ -2,70 +2,70 @@
 
 // orbital
 
-static const PROGMEM Arrow Stratagem_OrbitalGatlingBarrage[] = {
+static const Arrow Stratagem_OrbitalGatlingBarrage[] = {
     Arrow::RIGHT, Arrow::DOWN, Arrow::LEFT, Arrow::UP, Arrow::UP
 };
 
-static const PROGMEM Arrow Stratagem_OrbitalAirburstStrike[] = {
+static const Arrow Stratagem_OrbitalAirburstStrike[] = {
     Arrow::RIGHT, Arrow::RIGHT, Arrow::RIGHT
 };
 
-static const PROGMEM Arrow Stratagem_Orbital120MM_HEBarrage[] = {
+static const Arrow Stratagem_Orbital120MM_HEBarrage[] = {
     Arrow::RIGHT, Arrow::DOWN, Arrow::LEFT, Arrow::RIGHT, Arrow::DOWN
 };
 
-static const PROGMEM Arrow Stratagem_Orbital380MM_HEBarrage[] = {
+static const Arrow Stratagem_Orbital380MM_HEBarrage[] = {
    Arrow::RIGHT, Arrow::DOWN, Arrow::UP, Arrow::UP, Arrow::LEFT, Arrow::DOWN, Arrow::DOWN
 };
 
-static const PROGMEM Arrow Stratagem_OrbitalWalkingBarrage[] = {
+static const Arrow Stratagem_OrbitalWalkingBarrage[] = {
     Arrow::RIGHT, Arrow::RIGHT, Arrow::DOWN, Arrow::LEFT, Arrow::RIGHT, Arrow::DOWN
 };
 
-static const PROGMEM Arrow Stratagem_OrbitalLaser[] = {
+static const Arrow Stratagem_OrbitalLaser[] = {
     Arrow::RIGHT, Arrow::DOWN, Arrow::UP, Arrow::RIGHT, Arrow::DOWN
 };
 
-static const PROGMEM Arrow Stratagem_OrbitalRailcannonStrike[] = {
+static const Arrow Stratagem_OrbitalRailcannonStrike[] = {
     Arrow::RIGHT, Arrow::UP, Arrow::DOWN, Arrow::DOWN, Arrow::RIGHT
 };
 
 // eagle1
 
-static const PROGMEM Arrow Stratagem_Bomb500kg[] = {
+static const Arrow Stratagem_Bomb500kg[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::DOWN, Arrow::DOWN
 };
 
-static const PROGMEM Arrow Stratagem_EagleSmokeStrike[] = {
+static const Arrow Stratagem_EagleSmokeStrike[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::UP, Arrow::DOWN
 };
 
-static const PROGMEM Arrow Stratagem_EagleAirstrike[] = {
+static const Arrow Stratagem_EagleAirstrike[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::RIGHT
 };
 
-static const PROGMEM Arrow Stratagem_EagleStrafingRun[] = {
+static const Arrow Stratagem_EagleStrafingRun[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::RIGHT
 };
 
-static const PROGMEM Arrow Stratagem_EagleClusterBomb[] = {
+static const Arrow Stratagem_EagleClusterBomb[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::DOWN, Arrow::RIGHT
 };
 
-static const PROGMEM Arrow Stratagem_EagleNapalmAirstrike[] = {
+static const Arrow Stratagem_EagleNapalmAirstrike[] = {
    Arrow::UP, Arrow::RIGHT, Arrow::DOWN, Arrow::UP
 };
 
 
-static const PROGMEM Arrow Stratagem_JumpPack[] = {
+static const Arrow Stratagem_JumpPack[] = {
     Arrow::DOWN, Arrow::UP, Arrow::UP, Arrow::DOWN, Arrow::UP
 };
 
-static const PROGMEM Arrow Stratagem_Eagle110MMRocketPods[] = {
+static const Arrow Stratagem_Eagle110MMRocketPods[] = {
     Arrow::UP, Arrow::RIGHT, Arrow::UP, Arrow::LEFT
 };
 
-static const PROGMEM Arrow 	Stratagem_EXO45PatriotExosuit[] = {
+static const Arrow 	Stratagem_EXO45PatriotExosuit[] = {
     Arrow::LEFT, Arrow::DOWN, Arrow::RIGHT, Arrow::UP, Arrow::LEFT, Arrow::DOWN, Arrow::DOWN
 };
 
@@ -135,8 +135,7 @@ Option<Stratagem> ArrowSlots::tryMatchStratagemFromSlots(Option<uint8_t> maybeOv
             continue;
         }
         for(uint8_t strataIdx = 0; strataIdx < stratagemCallinLength; strataIdx++ ){
-            Arrow stratagemArrow = Arrow::DOWN;
-			PROGMEM_READ_STRUCTURE(&stratagemArrow, &stratagem.stratagemCallin[strataIdx]);
+            Arrow stratagemArrow = stratagem.stratagemCallin[strataIdx];
             Option<Arrow> maybeArrow = m_slots[strataIdx];
 
             if(const Arrow* p_arrow = maybeArrow.ptr_value()){
@@ -179,7 +178,7 @@ uint8_t ArrowSlots::GetStratagemArrows(Stratagem stratagem, Arrow* arrowsOut){
         PROGMEM_READ_STRUCTURE(&stratagemEntry, &stratagemProgmemEntry);
 		if(stratagemEntry.stratagemId == stratagem){
             uint8_t stratagemCallinLength = stratagemEntry.stratagemCallinLength;
-            memcpy_P(
+            memcpy(
                 arrowsOut,
                 stratagemEntry.stratagemCallin,
                 stratagemCallinLength * sizeof(Arrow)

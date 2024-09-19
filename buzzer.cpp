@@ -139,7 +139,7 @@ static const PROGMEM Sound MELODY_VOLUME_TEST[]{
 	Sound::END()
 };
 
-static const PROGMEM SoundMapping soundMapping[]{
+static const SoundMapping soundMapping[]{
 	{BuzzerSoundsModule::SoundPreset::BUTTON_PRESS, MELODY_KEY_PRESS},
 	{BuzzerSoundsModule::SoundPreset::FAIL, MELODY_FAIL},
 	{BuzzerSoundsModule::SoundPreset::SUCCESS, MELODY_SUCCESS},
@@ -212,10 +212,10 @@ uint8_t BuzzerSoundsModule::getCurrentUsedPin() const {
 }
 
 void BuzzerSoundsModule::playPreset(SoundPreset soundPreset){
-	SoundMapping soundMappedList[CONST_LENGTH(soundMapping)];
-	memcpy_P(soundMappedList, soundMapping, sizeof(soundMappedList));
+	//SoundMapping soundMappedList[CONST_LENGTH(soundMapping)];
+	//memcpy_P(soundMappedList, soundMapping, sizeof(soundMappedList));
 
-	for(SoundMapping entry : soundMappedList){
+	for(SoundMapping entry : soundMapping){
 		if(entry.soundPreset == soundPreset){
 			playMelody(entry.p_sound);
 			break;

@@ -25,7 +25,9 @@ struct ColorAndOutline{
 
 
 
-constexpr gui::Color565 CLEAR_COLOR 					= gui::ConvertRGBtoRGB565(0,140,235);//ILI9341_DARKCYAN;
+//constexpr gui::Color565 CLEAR_COLOR 					= gui::ConvertRGBtoRGB565(0,140,235);//ILI9341_DARKCYAN;
+//constexpr gui::Color565 GRIDLINE_COLOR					= gui::ConvertRGBtoRGB565(0,140,240);//ILI9341_NAVY;
+constexpr gui::Color565 CLEAR_COLOR 					= ILI9341_DARKCYAN;
 constexpr gui::Color565 GRIDLINE_COLOR					= gui::ConvertRGBtoRGB565(0,140,240);//ILI9341_NAVY;
 constexpr gui::Color565 HELL_MAIN_COLOR 				= ILI9341_YELLOW;
 constexpr gui::Color565 INVALID_COMBINATION_COLOR		= gui::ConvertRGBtoRGB565(255,0,0);//ILI9341_RED;

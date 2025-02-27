@@ -142,9 +142,9 @@ static const PROGMEM Sound MELODY_VOLUME_TEST[]{
 static const SoundMapping soundMapping[]{
 	{BuzzerSoundsModule::SoundPreset::BUTTON_PRESS, MELODY_KEY_PRESS},
 	{BuzzerSoundsModule::SoundPreset::FAIL, MELODY_FAIL},
-	{BuzzerSoundsModule::SoundPreset::SUCCESS, MELODY_SUCCESS},
-	{BuzzerSoundsModule::SoundPreset::VOLUME_TEST, MELODY_VOLUME_TEST},
-	{BuzzerSoundsModule::SoundPreset::LIBER_TEA, OF_LIBER_TEA},
+	//{BuzzerSoundsModule::SoundPreset::SUCCESS, MELODY_SUCCESS},
+	//{BuzzerSoundsModule::SoundPreset::VOLUME_TEST, MELODY_VOLUME_TEST},
+	//{BuzzerSoundsModule::SoundPreset::LIBER_TEA, OF_LIBER_TEA},
 
 };
 

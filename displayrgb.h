@@ -14,10 +14,11 @@ private:
 		South = 2,
 		West = 3
 	};
+	static constexpr uint8_t MAIN_ARROWS_IDX = 0;
 public:
-	enum StratagemSuggestion{
-		PRIMARY = 0,
-		SECONDARY = 1
+	enum StratagemSuggestion : uint8_t{
+		PRIMARY = 1,
+		SECONDARY = 2
 	};
 
 private:
@@ -52,7 +53,7 @@ private:
 
 private:
 	void drawStaticContent();
-	void drawDynamicContent(uint32_t delta);
+	void drawDynamicContent();
 
 private:
 	uint16_t mi_targetFpsDeltaMs = TARGET_FPS_DELTA_MS;

@@ -109,17 +109,19 @@ const ArrowToImageMapping tinyArrowMapping[]{
 };
 
 
-static gui::Window arrowWindowSlots[ARROW_MAX_SLOTS] = {
-	gui::Window(ARROWS_OFFSETS_HORIZONTAL[0] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-	gui::Window(ARROWS_OFFSETS_HORIZONTAL[1] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-	gui::Window(ARROWS_OFFSETS_HORIZONTAL[2] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-	gui::Window(ARROWS_OFFSETS_HORIZONTAL[3] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-	gui::Window(ARROWS_OFFSETS_HORIZONTAL[4] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-	gui::Window(ARROWS_OFFSETS_HORIZONTAL[5] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-	gui::Window(ARROWS_OFFSETS_HORIZONTAL[6] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-};
 
-static gui::Window suggestionArrows[][ARROW_MAX_SLOTS] = {
+
+static gui::Window arrowArrayWindowSlots[][ARROW_MAX_SLOTS] = {
+	// MAIN ARROWS
+	{
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[0] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[1] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[2] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[3] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[4] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[5] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[6] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+	},
 	// PRIMARY SUGGESTION ARROWS
 	{
 		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[0] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
@@ -140,6 +142,7 @@ static gui::Window suggestionArrows[][ARROW_MAX_SLOTS] = {
 		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[5] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
 		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[6] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
 	}
+
 };
 
 
@@ -167,7 +170,7 @@ static gui::Position selectedLowerSlotPreviousPosition = {-100.-100};
 static gui::AnimatedMovement lowPriorityAnimations[] = {
 
 // eagles ones
-	gui::AnimatedMovement(
+	/*gui::AnimatedMovement(
 		gui::Window(0, 0, &DPS_Eagle1Tiny),
 		gui::Position{-300, 72},	gui::Position{350, 72},
 		7000,
@@ -178,8 +181,28 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 		gui::Position{250, 237},	gui::Position{-350, 237},
 		7000,
 		true
-	),
+	),*/
 	
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_Eagle1Mid),
+		gui::Position{-20, 72},	gui::Position{320, 72},
+		10000,
+		false 
+	),
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_500kgBombHorMid),
+		gui::Position{-20, 72+6},	gui::Position{60, 72+6},
+		2300,
+		false,
+		true
+	),
+	gui::AnimatedMovement(
+		gui::Window(0, 0, &DPS_500kgBombHorMid, true),
+		gui::Position{60, 72+6},	gui::Position{110+1, 200+6},
+		4000,
+		false,
+		true
+	),
 
 // STARS
 	gui::AnimatedMovement(
@@ -229,9 +252,17 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 		true, false, true
 	),
 
+
+
 	
 };
 
+static gui::AnimatedMovement  *scriptedAnimations[]{
+	&lowPriorityAnimations[1],
+	&lowPriorityAnimations[2],	
+};
+
+static gui::AnimatedMovement** currentScriptedAnimation = &scriptedAnimations[CONST_LENGTH(scriptedAnimations)];
 
 
 struct WindowColorMapping {
@@ -303,7 +334,7 @@ void DisplayRGBModule::setTargetFPS(uint8_t fps){
 
 void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow) {
 	if(slot < ARROW_MAX_SLOTS) {
-		gui::Window& arrowWindow = arrowWindowSlots[slot];
+		gui::Window& arrowWindow = arrowArrayWindowSlots[MAIN_ARROWS_IDX][slot];
 		if(const Arrow* p_arrow = arrow.ptr_value()){			
 			arrowWindow.setHidden(false);
 			for(const ArrowToImageMapping& entry : bigArrowMapping){
@@ -327,16 +358,16 @@ void DisplayRGBModule::showSlotSelection(Option<uint8_t> slot) {
 			selectedLowerSlotPreviousPosition = slotLowerSelection.isHidden() ? gui::Position{640,640} : slotLowerSelection.getPosition();
 			//slotLowerSelection.setHidden(false);
 			gui::Position arrowSlotWindowPosition
-				= arrowWindowSlots[*p_slot].getPosition();
+				= arrowArrayWindowSlots[MAIN_ARROWS_IDX][*p_slot].getPosition();
 			arrowSlotWindowPosition.x += SELECTOR_ARROW_OFFSET;
 			/*gui::Size arrowSlotWindowSize
-				= arrowWindowSlots[*p_slot].getImageBuffer();*/
+				= arrowArrayWindowSlots[MAIN_ARROWS_IDX][*p_slot].getImageBuffer();*/
 			arrowSlotWindowPosition.y = int16_t(arrowSlotWindowPosition.y + BIG_ARROW_HEIGHT + 5);
 			slotLowerSelection.setPosition(arrowSlotWindowPosition);
 			slotLowerSelection.setHidden(false);
 
 			arrowSlotWindowPosition
-				= arrowWindowSlots[*p_slot].getPosition();	
+				= arrowArrayWindowSlots[MAIN_ARROWS_IDX][*p_slot].getPosition();	
 			arrowSlotWindowPosition.x += SELECTOR_ARROW_OFFSET;	
 			
 			arrowSlotWindowPosition.y = int16_t(arrowSlotWindowPosition.y - BIG_SELECTOR_HEIGHT - 5);
@@ -381,7 +412,7 @@ void DisplayRGBModule::showStratagemSuggestion(Option<Stratagem> maybeStratagem,
 	Arrow arrowCombination[ARROW_MAX_SLOTS];
 	uint8_t arrowCombinationLength = ArrowSlots::GetStratagemArrows(stratagem, arrowCombination);
 
-	gui::Window (&suggestionArrowsEntry)[ARROW_MAX_SLOTS] = suggestionArrows[size_t(suggestion)];
+	gui::Window (&suggestionArrowsEntry)[ARROW_MAX_SLOTS] = arrowArrayWindowSlots[suggestion];
 	for(uint8_t suggestionSlotIdx = 0; suggestionSlotIdx < ARROW_MAX_SLOTS; suggestionSlotIdx++){
 		bool showArrow = suggestionSlotIdx < arrowCombinationLength;
 		gui::Window& suggestionArrow = suggestionArrowsEntry[suggestionSlotIdx];
@@ -419,7 +450,7 @@ void DisplayRGBModule::showOutcome(Option<Stratagem> maybeStratagem, bool show =
 		outcomeText = PSTR("FAILED");
 	}
 
-	for(gui::Window& arrowWindowSlot : arrowWindowSlots){
+	for(gui::Window& arrowWindowSlot : arrowArrayWindowSlots[MAIN_ARROWS_IDX]){
 		arrowWindowSlot.forceUpdate();
 	}
 	
@@ -431,7 +462,7 @@ void DisplayRGBModule::showOutcome(Option<Stratagem> maybeStratagem, bool show =
 
 
 void DisplayRGBModule::reset() {
-	for(gui::Window& arrowWindow : arrowWindowSlots){
+	for(gui::Window& arrowWindow : arrowArrayWindowSlots[MAIN_ARROWS_IDX]){
 		arrowWindow.setHidden(true);
 	}
 
@@ -524,7 +555,7 @@ void DisplayRGBModule::run(){
 
 	if(delta >= mi_targetFpsDeltaMs){
 		frameStartTime = millis();
-		drawDynamicContent(delta);	
+		drawDynamicContent();	
 
 		/*uint32_t fps = 1000/delta;
 
@@ -645,7 +676,7 @@ void DisplayRGBModule::drawStaticContent(){
 }
 
 
-void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
+void DisplayRGBModule::drawDynamicContent() {
 	/*TimedExecution10ms** begin = TimedExecution10ms::List::getTimedExecutionListBegin();
 	if(*begin == nullptr){
 		Serial.println("Is null");
@@ -687,11 +718,53 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 
 	if(mb_redraw){
 
-		for(gui::Window& arrowWindow : arrowWindowSlots){
+		/*for(gui::Window& arrowWindow : arrowArrayWindowSlots[MAIN_ARROWS_IDX]){
 			drawWindowBitPixelWithDarkGrid(arrowWindow, slotArrowColor, Some(OUTLINE_COLOR), Some(arrowWindow.getPosition()));
 			arrowWindow.updated();
+		}*/
+
+		if(mb_textChanged) {
+			// PRIMARY SUGGESTION
+			clearWithDarkGrid(
+				{TEXT_SUGGESTION_PRIMARY_POSITION_X, TEXT_SUGGESTION_PRIMARY_POSITION_Y},
+				{175, 8}
+			);
+
+			tft.setCursor(TEXT_SUGGESTION_PRIMARY_POSITION_X, TEXT_SUGGESTION_PRIMARY_POSITION_Y);
+			tft.setTextColor(ILI9341_ORANGE);
+			tft.println((const __FlashStringHelper*) ms_primarySuggestionText);
+			
+			/*for(gui::Window& primaryArrowWindow : primarySuggestionArrows){
+				
+				//drawWindowBitPixel(primaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(primaryArrowWindow.getPosition()));
+				gui::drawWindowBitPixel(tft, primaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(gui::ClearSettings{.position = primaryArrowWindow.getPosition(), .clearFn = clearWithBlack}));
+				primaryArrowWindow.updated();
+			}*/
+
+			// SECONDARY SUGGESTION
+			clearWithDarkGrid(
+				{TEXT_SUGGESTION_SECONDARY_POSITION_X, TEXT_SUGGESTION_SECONDARY_POSITION_Y},
+				{175, 8}
+			);
+
+			tft.setCursor(TEXT_SUGGESTION_SECONDARY_POSITION_X, TEXT_SUGGESTION_SECONDARY_POSITION_Y);
+			tft.setTextColor(ILI9341_GREENYELLOW);
+			tft.println((const __FlashStringHelper*)ms_secondarySuggestionText);
+
+			mb_textChanged = false;
 		}
 
+		for(auto& suggestionArrowsEntry : arrowArrayWindowSlots){
+			Option<gui::Color565> maybeOutline;
+			if(&suggestionArrowsEntry == &arrowArrayWindowSlots[MAIN_ARROWS_IDX]){
+				maybeOutline = Some(OUTLINE_COLOR);
+			}
+			for(gui::Window& suggestionArrow : suggestionArrowsEntry){
+				
+				drawWindowBitPixelWithDarkGrid(suggestionArrow, slotArrowColor, maybeOutline, suggestionArrow.getPosition());
+				suggestionArrow.updated();
+			}
+		}
 		drawWindowBitPixelWithDarkGrid(slotUpperSelection, SELECTOR_COLOR, Some(SELECTOR_OUTLINE_COLOR), Some(selectedUpperSlotPreviousPosition));
 		slotUpperSelection.updated();
 
@@ -700,60 +773,18 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 
 		mb_redraw = false;
 	}
-	else if(mb_textChanged) {
-		// PRIMARY SUGGESTION
-		clearWithDarkGrid(
-			{TEXT_SUGGESTION_PRIMARY_POSITION_X, TEXT_SUGGESTION_PRIMARY_POSITION_Y},
-			{175, 8}
-		);
-
-		tft.setCursor(TEXT_SUGGESTION_PRIMARY_POSITION_X, TEXT_SUGGESTION_PRIMARY_POSITION_Y);
-		tft.setTextColor(ILI9341_ORANGE);
-		tft.println((const __FlashStringHelper*) ms_primarySuggestionText);
-		
-		/*for(gui::Window& primaryArrowWindow : primarySuggestionArrows){
-			
-			//drawWindowBitPixel(primaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(primaryArrowWindow.getPosition()));
-			gui::drawWindowBitPixel(tft, primaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(gui::ClearSettings{.position = primaryArrowWindow.getPosition(), .clearFn = clearWithBlack}));
-			primaryArrowWindow.updated();
-		}*/
-
-		// SECONDARY SUGGESTION
-		clearWithDarkGrid(
-			{TEXT_SUGGESTION_SECONDARY_POSITION_X, TEXT_SUGGESTION_SECONDARY_POSITION_Y},
-			{175, 8}
-		);
-
-		tft.setCursor(TEXT_SUGGESTION_SECONDARY_POSITION_X, TEXT_SUGGESTION_SECONDARY_POSITION_Y);
-		tft.setTextColor(ILI9341_GREENYELLOW);
-		tft.println((const __FlashStringHelper*)ms_secondarySuggestionText);
-		
-		for(auto& suggestionArrowsEntry : suggestionArrows){
-			for(gui::Window& suggestionArrow : suggestionArrowsEntry){
-				
-				drawWindowBitPixelWithDarkGrid(suggestionArrow, HELL_MAIN_COLOR, None<gui::Color565>(), suggestionArrow.getPosition());
-				suggestionArrow.updated();
-			}
-		}
-/*
-		for(gui::Window& secondaryArrowWindow : secondarySuggestionArrows){
-			
-			//drawWindowBitPixel(primaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(primaryArrowWindow.getPosition()));
-			gui::drawWindowBitPixel(tft, secondaryArrowWindow, HELL_MAIN_COLOR, None<gui::Color565>(), Some(gui::ClearSettings{.position = secondaryArrowWindow.getPosition(), .clearFn = clearWithBlack}));
-			secondaryArrowWindow.updated();
-		}
-*/
-
-
-
-		mb_textChanged = false;
-	}
 	else if(mb_outcomeChanged){
 		int16_t outcomeTextX = mb_wasSuccessful ? 90 : 95;
 		clearWithGrid({ int16_t(outcomeTextX -10), 73}, {70, 8});
 		tft.setCursor(outcomeTextX, 73);
 		tft.setTextColor(mb_wasSuccessful ? ILI9341_GREEN : ILI9341_RED);
 		tft.println((const __FlashStringHelper*)ms_outcomeText);
+		if(ms_outcomeText != EMPTY_PROGMEM_STRING){
+			currentScriptedAnimation = &scriptedAnimations[0];
+			(*currentScriptedAnimation)->restart();
+			(*currentScriptedAnimation)->window.setHidden(false);
+			lowPriorityAnimations[0].restart();
+		}
 		mb_outcomeChanged = false;
 	}
 	// IDLE
@@ -781,7 +812,7 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 			}
 			p_animation = &lowPriorityAnimations[lowPriorityAnimationsIndex];
 			oldPosition = p_animation->animateMovement();
-			if(lowPriorityAnimationsIndex < 2){
+			if(lowPriorityAnimationsIndex < 1){
 				matchedColor.mainColor = matchedColor.outlineColor = ILI9341_RED;
 			}
 			lowPriorityAnimationsIndex++;
@@ -790,7 +821,7 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 		//ColorAndOutline matchedColor// = matchWindowWithColor(&p_animation->window);
 		
 
-		drawWindowBitPixel(p_animation->window, matchedColor.mainColor, Some(matchedColor.outlineColor), Some(oldPosition));
+		drawWindowBitPixel(p_animation->window, matchedColor.mainColor, Some(matchedColor.outlineColor), Some(oldPosition)/*p_animation->clearBeforeDraw() ? Some(oldPosition) : None<gui::Position>()*/);
 		if(p_animation->isMirroredY()){
 			int16_t halfDisplayWidth = tft.width();
 
@@ -802,7 +833,22 @@ void DisplayRGBModule::drawDynamicContent(uint32_t delta) {
 		}
 		p_animation->window.updated();
 
-	
+		if(currentScriptedAnimation != &scriptedAnimations[CONST_LENGTH(scriptedAnimations)]){
+			gui::AnimatedMovement* p_scriptedAnimationEntry = *currentScriptedAnimation;
+			
+			if(p_scriptedAnimationEntry->isDisabled()){
+				p_scriptedAnimationEntry->setDisabled(false);
+				p_scriptedAnimationEntry->window.setHidden(false);
+				p_scriptedAnimationEntry->restart();
+			}
+			else if(p_scriptedAnimationEntry->isFinished()){
+				p_scriptedAnimationEntry->window.setHidden(true);
+				p_scriptedAnimationEntry->setDisabled(true);
+				currentScriptedAnimation++;
+				
+			}
+			
+		}
 
 		
 	}

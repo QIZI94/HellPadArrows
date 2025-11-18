@@ -11,11 +11,17 @@
 
 
 struct ArrowToImageMapping{
-	constexpr ArrowToImageMapping(Arrow arrow, const gui::ImageBuffer* image)
-	: arrow(arrow), image(image) {}
 
-	const Arrow arrow;
+	constexpr ArrowToImageMapping(Arrow arrow, const gui::ImageBuffer* image, gui::Flip flip = gui::Flip::NONE)
+	: image(image), arrow(arrow), flip(flip) {}
+
+//	const Arrow arrow;
+
 	const gui::ImageBuffer* image = nullptr;
+	struct {
+		Arrow arrow : 4;
+		gui::Flip flip : 4;
+	};
 };
 
 struct ColorAndOutline{
@@ -95,17 +101,17 @@ static gui::Color565 slotArrowColor = HELL_MAIN_COLOR;
 
 
 const ArrowToImageMapping bigArrowMapping[]{
-	{Arrow::UP,		&DPS_ArrowUpBigBMP},
-	{Arrow::DOWN,	&DPS_ArrowDownBigBMP},
-	{Arrow::LEFT,	&DPS_ArrowLeftBigBMP},
-	{Arrow::RIGHT,	&DPS_ArrowRightBigBMP},
+	{Arrow::UP,		&DPS_ArrowUpBigBMP,		gui::Flip::NONE},
+	{Arrow::DOWN,	&DPS_ArrowUpBigBMP,		gui::Flip::VERTICALLY},
+	{Arrow::LEFT,	&DPS_ArrowLeftBigBMP,	gui::Flip::NONE},
+	{Arrow::RIGHT,	&DPS_ArrowLeftBigBMP,	gui::Flip::HORIZONTALLY},
 };
 
 const ArrowToImageMapping tinyArrowMapping[]{
-	{Arrow::UP,		&DPS_ArrowUpTinyBMP},
-	{Arrow::DOWN,	&DPS_ArrowDownTinyBMP},
-	{Arrow::LEFT,	&DPS_ArrowLeftTinyBMP},
-	{Arrow::RIGHT,	&DPS_ArrowRightTinyBMP},
+	{Arrow::UP,		&DPS_ArrowUpTinyBMP,	gui::Flip::NONE},
+	{Arrow::DOWN,	&DPS_ArrowUpTinyBMP,	gui::Flip::VERTICALLY},
+	{Arrow::LEFT,	&DPS_ArrowRightTinyBMP,	gui::Flip::HORIZONTALLY},
+	{Arrow::RIGHT,	&DPS_ArrowRightTinyBMP, gui::Flip::NONE},
 };
 
 
@@ -147,7 +153,7 @@ static gui::Window arrowArrayWindowSlots[][ARROW_MAX_SLOTS] = {
 
 
 static gui::Window slotUpperSelection(
-	640, ARROWS_OFFSET_Y - BIG_SELECTOR_HEIGHT - 5, &DPS_ArrowSelectorUpperBMP, true
+	640, ARROWS_OFFSET_Y - BIG_SELECTOR_HEIGHT - 5, &DPS_ArrowSelectorLowerBMP, true, gui::Flip::VERTICALLY
 );
 
 static gui::Window slotLowerSelection(
@@ -340,6 +346,7 @@ void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow) {
 			for(const ArrowToImageMapping& entry : bigArrowMapping){
 				if(entry.arrow == *p_arrow){
 					arrowWindow.setImageBuffer(entry.image);
+					arrowWindow.setFlipSetting(entry.flip);
 				}
 			}
 		}
@@ -421,7 +428,9 @@ void DisplayRGBModule::showStratagemSuggestion(Option<Stratagem> maybeStratagem,
 			Arrow arrow = arrowCombination[suggestionSlotIdx];
 			for(const ArrowToImageMapping& entry : tinyArrowMapping){
 				if(entry.arrow == arrow){
+					gui::Flip flip = gui::Flip::NONE;
 					suggestionArrow.setImageBuffer(entry.image);
+					suggestionArrow.setFlipSetting(entry.flip);
 				}
 			}
 		}
@@ -509,7 +518,7 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	//digitalWrite(Pinout::Assignment::TFT_CS	, HIGH); 
 	tft.begin();
 	
-	uint8_t x = tft.readcommand8(ILI9341_RDMODE);
+	//uint8_t x = tft.readcommand8(ILI9341_RDMODE);
 	/*Serial.print("Display Power Mode: 0x"); Serial.println(x, HEX);
 	x = tft.readcommand8(ILI9341_RDMADCTL);
 	Serial.print("MADCTL Mode: 0x"); Serial.println(x, HEX);
@@ -525,7 +534,7 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	//tft.setScrollMargins(0, tft.height());
 
 	drawStaticContent();
-	
+
 	/*for(gui::Window& primaryArrowWindow : primarySuggestionArrows){
 		primaryArrowWindow.setImageBuffer(&DPS_ArrowRightTinyBMP);
 		primaryArrowWindow.setHidden(false);
@@ -592,12 +601,13 @@ void DisplayRGBModule::drawStaticContent(){
 	clearWithGrid(gui::Position{0, 0}, gui::Size{tft.width(), tft.height()});
 
 	int16_t screenWidth = tft.width();
-	gui::Window logoWindow{10, 30, &DPS_LogoSmall};
+	gui::Window logoWindow{10, 30, &DPS_LogoSmall, false, gui::Flip::VERTICALLY};
 
 	drawWindowBitPixel(logoWindow, HELL_MAIN_COLOR, Some(OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y + 35, screenWidth, 4);
 
 	logoWindow.setPosition({10, 262});
+	logoWindow.setFlipSetting(gui::Flip::NONE);
 	drawWindowBitPixel(logoWindow, HELL_MAIN_COLOR, Some(OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y - 10, screenWidth, 4);
 
@@ -675,7 +685,7 @@ void DisplayRGBModule::drawStaticContent(){
 	
 }
 
-
+volatile char takeSpace[30];
 void DisplayRGBModule::drawDynamicContent() {
 	/*TimedExecution10ms** begin = TimedExecution10ms::List::getTimedExecutionListBegin();
 	if(*begin == nullptr){
@@ -829,7 +839,7 @@ void DisplayRGBModule::drawDynamicContent() {
 			gui::Position oldPositionMirrored = oldPosition;
 			positionMirrored.y = 70 - (positionMirrored.y - halfDisplayWidth);
 			oldPositionMirrored.y = 70 - (oldPositionMirrored.y - halfDisplayWidth);	
-			drawWindowBitPixel(gui::Window(positionMirrored.x, positionMirrored.y, p_animation->window.getImageBuffer()), matchedColor.mainColor, Some(matchedColor.outlineColor), Some(oldPositionMirrored));				
+			drawWindowBitPixel(gui::Window(positionMirrored.x, positionMirrored.y, p_animation->window.getImageBuffer(), false, gui::Flip::VERTICALLY), matchedColor.mainColor, Some(matchedColor.outlineColor), Some(oldPositionMirrored));				
 		}
 		p_animation->window.updated();
 

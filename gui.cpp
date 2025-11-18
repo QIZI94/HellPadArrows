@@ -62,9 +62,9 @@ Position AnimatedMovement::animateMovement(){
 	if(isDisabled()){
 		return oldPosition;
 	}
-	else if(mb_initialized == false){
+	else if(animState.mb_initialized == false){
 		mi_startTime = millis();
-		mb_initialized = true;
+		animState.mb_initialized = true;
 	}
 	else if(isFinished()){
 		if(isRepeated()){
@@ -104,33 +104,45 @@ void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::C
 	}
 	if(!window.isHidden()){
 		Color565 outlineColor = maybeOutlineColor.valueOr(mainColor);
-		drawBitmapWithOutline(tft, imageBuffer->image, windowPosition.x, windowPosition.y, windowSize.width, windowSize.height, mainColor, outlineColor);
+		drawBitmapWithOutline(tft, imageBuffer->image, windowPosition.x, windowPosition.y, windowSize.width, windowSize.height, mainColor, outlineColor, window.getFlipSetting());
 	}
 }
 
-void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor){
+void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor, gui::Flip flip){
+	constexpr int16_t BITWISE_MODULO_8BITS_MASK = 7;
+	constexpr uint8_t IS_PIXEL_MASK = 0x80;
+	
 	const int16_t byteWidth = (width + 7) / 8; // Bitmap scanline pad = whole byte
   	uint16_t currentByteLoadedIndex = 0;
 	uint8_t b = 0;
 	bool wasPreviousPointPixel = false;
+	int16_t adjustedHeight = -(height - 1);
+
 	
 
 	auto getByteIndexInBitset = [](int16_t x, int16_t y, int16_t byteWidth){
 		return y * byteWidth + x / 8;
 	};
 	tft.startWrite();
-	for (int16_t j = 0; j < height; j++, topY++) {
+	for (int16_t j = 0; j < height; j++) {
 		bool wasPreviousPointPixel = false;
+		bool alreadyPreloaded = false;
 		for (int16_t i = 0; i < width; i++) {
-			if (i & 7){
+			if (i & BITWISE_MODULO_8BITS_MASK){
 				b <<= 1;
 			}
 			else{
-				currentByteLoadedIndex = getByteIndexInBitset(i, j, byteWidth);
-				b = pgm_read_byte(&image[currentByteLoadedIndex]);
+				//currentByteLoadedIndex = getByteIndexInBitset(i, j, byteWidth);
+				if(alreadyPreloaded){
+					alreadyPreloaded = false;
+				}
+				else {
+					b = pgm_read_byte(image++);//(&image[currentByteLoadedIndex]);
+				}
+				
 			}
 
-			if (b & 0x80){
+			if (b & IS_PIXEL_MASK){
 				const bool neghborLeft = wasPreviousPointPixel;
 				Color565 pixelColor = mainColor;
 				if(!neghborLeft){
@@ -140,7 +152,21 @@ void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t 
 					pixelColor = outlineColor;
 				}
 				else {
-					uint16_t rightNeighborByteIndex = getByteIndexInBitset(i + 1, j, byteWidth);
+					int16_t rightNegihborPixelPosition = i + 1;
+					uint8_t n;
+					if(rightNegihborPixelPosition & BITWISE_MODULO_8BITS_MASK){
+						n = (b << 1);
+					}
+					else {
+						n = b = pgm_read_byte(image++);
+						alreadyPreloaded = true;
+					}
+
+					if (n & IS_PIXEL_MASK == 0){
+						pixelColor = outlineColor;
+					}
+
+					/*uint16_t rightNeighborByteIndex = getByteIndexInBitset(i + 1, j, byteWidth);
 					if(currentByteLoadedIndex == rightNeighborByteIndex){
 						const uint8_t neghborRight = (b << 1) & 0x80;
 						if (neghborRight == 0){
@@ -152,11 +178,32 @@ void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t 
 						if((neghborRight & 0x80) == 0){
 							pixelColor = outlineColor;
 						} 
-					}
+					}*/
 					
 				}
-
-				tft.writePixel(topX + i, topY, pixelColor);
+				int16_t pixelX;
+				int16_t pixelY;
+				switch (flip)
+				{
+					case gui::Flip::HORIZONTALLY:
+					case gui::Flip::HORIZONTALLY_AND_VERTICALLY:
+						pixelX = topX + width - 1 - i;
+						break;
+					default:
+						pixelX = topX + i;
+						break;
+				}
+				switch(flip){
+					case gui::Flip::VERTICALLY:
+					case gui::Flip::HORIZONTALLY_AND_VERTICALLY:
+						pixelY = topY + height - 1 - j;
+						break;
+					default:
+						pixelY = topY + j;
+						break;
+				}
+				tft.writePixel(pixelX, pixelY, pixelColor);
+				
 				wasPreviousPointPixel = true;
 			}
 			else {

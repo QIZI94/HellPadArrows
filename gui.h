@@ -6,6 +6,8 @@
 
 #include "shared/optional.h"
 
+//#include "decompression.h"
+
 namespace gui{
 
 using Color565 = uint16_t;
@@ -37,13 +39,18 @@ struct Size {
 		return width != other.width || height != other.height;
 	}
 };
-
 struct ImageBuffer{
 	const Size size;
 	const uint8_t image[];
 };
 
 
+enum Flip : uint8_t{
+	NONE,
+	HORIZONTALLY,
+	VERTICALLY,
+	HORIZONTALLY_AND_VERTICALLY
+};
 //#define WINDOW_OPTIMIZE_RAM
 //#define WINDOW_OPTIMIZE_ROM
 
@@ -117,9 +124,10 @@ public:
 		return properties.isHidden;
 	}
 #else
+
 public: 
-	constexpr Window(int16_t x, int16_t y, const ImageBuffer* imageBuffer, bool isHidden = false)
-	 : position(Position{x, y}), b_isHidden(isHidden), b_needsUpdate(!isHidden), imageBuffer(imageBuffer) {}
+	constexpr Window(int16_t x, int16_t y, const ImageBuffer* imageBuffer, bool isHidden = false, gui::Flip flipSetting = gui::Flip::NONE)
+	 : position(Position{x, y}), b_isHidden(isHidden), b_needsUpdate(!isHidden), imageBuffer(imageBuffer) ,flipSetting(flipSetting) {}
 
 	inline void forceUpdate() {
 		b_needsUpdate = true;
@@ -168,10 +176,15 @@ public:
 			forceUpdate();
 		}
 	}
-	
-
 	inline const ImageBuffer* getImageBuffer() const {
 		return imageBuffer;
+	}
+
+	inline void setFlipSetting(gui::Flip flip) {
+		flipSetting = flip;
+	}
+	inline gui::Flip getFlipSetting() const {
+		return flipSetting;
 	}
 
 private:
@@ -179,8 +192,11 @@ private:
 	Properties properties;
 #else 
 	Position position;
-	bool b_isHidden = false;
-	bool b_needsUpdate = true;
+	struct{
+		bool b_isHidden;// : 1;
+		bool b_needsUpdate;// : 1;
+		gui::Flip flipSetting;// : 6;
+	};
 #endif
 	
 	const ImageBuffer* imageBuffer;
@@ -188,8 +204,29 @@ private:
 
 class AnimatedMovement {
 public:
+	struct AnimationState{
+		union{
+			struct{
+				bool mb_disabled : 1;
+				bool mb_mirroredY : 1;
+				bool mb_repeat : 1;
+				bool mb_fadeInOut : 1;
+				bool mb_initialized : 1;
+			};
+			uint8_t state;
+			
+		};
+		constexpr AnimationState(bool repeat, bool disabled, bool mirroredY, bool fadeInOut, bool initialized)
+		 : mb_disabled(disabled), mb_mirroredY(mirroredY), mb_repeat(repeat), mb_fadeInOut(fadeInOut), mb_initialized(initialized)
+		{}
+		constexpr AnimationState(uint8_t state) : state(state){}
+		
+		
+	};
 	constexpr AnimatedMovement(const Window& window, const Position& start, const Position& end, uint16_t duration, bool repeat = true, bool disabled = false, bool mirroredY = false, bool fadeInOut = true)
-	 : window(window), start(start), end(end), mi_duration(duration), mi_startTime(0), mb_disabled(disabled), mb_mirroredY(mirroredY), mb_repeat(repeat), mb_fadeInOut(fadeInOut), mb_initialized(false){}
+	 : window(window), start(start), end(end), mi_duration(duration), mi_startTime(0), animState(AnimationState(repeat, disabled, mirroredY, fadeInOut, false)){
+
+	 }
 
 
 	void restart() {
@@ -210,19 +247,19 @@ public:
 	}
 
 	void setDisabled(bool disabled){
-		mb_disabled = disabled;
+		animState.mb_disabled = disabled;
 	}
 
 	void setRepeat(bool repeat){
-		mb_repeat = repeat;
+		animState.mb_repeat = repeat;
 	}
 
 	void setFadeInOut(bool fadeInOut){
-		mb_fadeInOut = fadeInOut;
+		animState.mb_fadeInOut = fadeInOut;
 	}
 
 	void setMirroredY(bool mirrored){
-		mb_mirroredY = mirrored;
+		animState.mb_mirroredY = mirrored;
 	}
 
 
@@ -240,15 +277,15 @@ public:
 
 
 	bool isDisabled() const {
-		return mb_disabled;
+		return animState.mb_disabled;
 	}
 
 	bool isRepeated() const {
-		return mb_repeat;
+		return animState.mb_repeat;
 	}
 
 	bool isFadeInOut() const {
-		return mb_fadeInOut;
+		return animState.mb_fadeInOut;
 	}
 
 	bool isFinished() const {
@@ -256,7 +293,7 @@ public:
 	}
 
 	bool isMirroredY() const {
-		return mb_mirroredY;
+		return animState.mb_mirroredY;
 	}
 
 	// returns old position
@@ -269,11 +306,12 @@ private:
 	Position end;
 	uint16_t mi_startTime;
 	uint16_t mi_duration;
-	bool mb_disabled;
+	AnimationState animState;
+	/*bool mb_disabled;
 	bool mb_mirroredY;
 	bool mb_repeat;
 	bool mb_fadeInOut;
-	bool mb_initialized;
+	bool mb_initialized;*/
 	//bool
 };
 
@@ -311,7 +349,7 @@ Color565 lerpColor565(Color565 color_start, Color565 color_end, uint16_t duratio
 void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 color, Option<Color565> maybeOutlineColor = None<Color565>(), Option<gui::ClearSettings> maybeClear = None<gui::ClearSettings>());
 void drawHorizontalSeparatorWithBorders(Adafruit_ILI9341& tft, int16_t x, int16_t y, int16_t width, int16_t height);
 
-void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor);
+void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor, gui::Flip flip = gui::Flip::NONE);
 void drawGeneratedGridPattern(Adafruit_ILI9341& tft, int16_t topX, int16_t topY, int16_t width, int16_t height, int16_t gridSpacing, Color565 lineColor, Color565 backgroundColor, int16_t offsetX = 0, int16_t offsetY = 0);
 
 

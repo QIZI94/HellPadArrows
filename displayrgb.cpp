@@ -12,12 +12,12 @@
 
 struct ArrowToImageMapping{
 
-	constexpr ArrowToImageMapping(Arrow arrow, const gui::ImageBuffer* image, gui::Flip flip = gui::Flip::NONE)
+	constexpr ArrowToImageMapping(Arrow arrow, gui::CompressedImageBuffer image, gui::Flip flip = gui::Flip::NONE)
 	: image(image), arrow(arrow), flip(flip) {}
 
 //	const Arrow arrow;
 
-	const gui::ImageBuffer* image = nullptr;
+	gui::CompressedImageBuffer image;
 	struct {
 		Arrow arrow : 4;
 		gui::Flip flip : 4;
@@ -101,17 +101,17 @@ static gui::Color565 slotArrowColor = HELL_MAIN_COLOR;
 
 
 const ArrowToImageMapping bigArrowMapping[]{
-	{Arrow::UP,		&DPS_ArrowUpBigBMP,		gui::Flip::NONE},
-	{Arrow::DOWN,	&DPS_ArrowUpBigBMP,		gui::Flip::VERTICALLY},
-	{Arrow::LEFT,	&DPS_ArrowLeftBigBMP,	gui::Flip::NONE},
-	{Arrow::RIGHT,	&DPS_ArrowLeftBigBMP,	gui::Flip::HORIZONTALLY},
+	{Arrow::UP,		DPS_ArrowUpBigBMP,		gui::Flip::NONE},
+	{Arrow::DOWN,	DPS_ArrowUpBigBMP,		gui::Flip::VERTICALLY},
+	{Arrow::LEFT,	DPS_ArrowLeftBigBMP,	gui::Flip::NONE},
+	{Arrow::RIGHT,	DPS_ArrowLeftBigBMP,	gui::Flip::HORIZONTALLY},
 };
 
 const ArrowToImageMapping tinyArrowMapping[]{
-	{Arrow::UP,		&DPS_ArrowUpTinyBMP,	gui::Flip::NONE},
-	{Arrow::DOWN,	&DPS_ArrowUpTinyBMP,	gui::Flip::VERTICALLY},
-	{Arrow::LEFT,	&DPS_ArrowRightTinyBMP,	gui::Flip::HORIZONTALLY},
-	{Arrow::RIGHT,	&DPS_ArrowRightTinyBMP, gui::Flip::NONE},
+	{Arrow::UP,		DPS_ArrowUpTinyBMP,	gui::Flip::NONE},
+	{Arrow::DOWN,	DPS_ArrowUpTinyBMP,	gui::Flip::VERTICALLY},
+	{Arrow::LEFT,	DPS_ArrowRightTinyBMP,	gui::Flip::HORIZONTALLY},
+	{Arrow::RIGHT,	DPS_ArrowRightTinyBMP, gui::Flip::NONE},
 };
 
 
@@ -153,11 +153,11 @@ static gui::Window arrowArrayWindowSlots[][ARROW_MAX_SLOTS] = {
 
 
 static gui::Window slotUpperSelection(
-	640, ARROWS_OFFSET_Y - BIG_SELECTOR_HEIGHT - 5, &DPS_ArrowSelectorLowerBMP, true, gui::Flip::VERTICALLY
+	640, ARROWS_OFFSET_Y - BIG_SELECTOR_HEIGHT - 5, DPS_ArrowSelectorLowerBMP, true, gui::Flip::VERTICALLY
 );
 
 static gui::Window slotLowerSelection(
-	640, ARROWS_OFFSET_Y + BIG_ARROW_HEIGHT + 5, &DPS_ArrowSelectorLowerBMP, true
+	640, ARROWS_OFFSET_Y + BIG_ARROW_HEIGHT + 5, DPS_ArrowSelectorLowerBMP, true
 );
 
 
@@ -190,20 +190,20 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 	),*/
 	
 	gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_Eagle1Mid),
+		gui::Window(0, 0, DPS_Eagle1Mid),
 		gui::Position{-20, 72},	gui::Position{320, 72},
 		10000,
 		false 
 	),
 	gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_500kgBombHorMid),
+		gui::Window(0, 0, DPS_500kgBombHorMid),
 		gui::Position{-20, 72+6},	gui::Position{60, 72+6},
 		2300,
 		false,
 		true
 	),
 	gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_500kgBombHorMid, true),
+		gui::Window(0, 0, DPS_500kgBombHorMid, true),
 		gui::Position{60, 72+6},	gui::Position{110+1, 200+6},
 		4000,
 		false,
@@ -212,47 +212,47 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 
 // STARS
 	gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP),
 		gui::Position{20,290},	gui::Position{10, 331},
 		1200,
 		true, false, true
 	),
 	gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP),
 		gui::Position{50,290},	gui::Position{40, 331},
 		1500,
 		true, false, true
 	),
 
 	gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP),
 		gui::Position{80,290},	gui::Position{70, 331},
 		2000,
 		true, false, true
 	),
 
 	gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP),
 		gui::Position{115,292},	gui::Position{115, 331},
 		1700,
 		true, false, true
 	),
 	gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP),
 		gui::Position{140,290},	gui::Position{170, 331},
 		1300,
 		true, false, true
 	),
 
 	gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP),
 		gui::Position{170,290},	gui::Position{200, 331},
 		1900,
 		true, false, true
 	),
 
 	gui::AnimatedMovement(
-		gui::Window(0, 0, &DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP),
 		gui::Position{200,290},	gui::Position{230, 331},
 		2200,
 		true, false, true
@@ -517,7 +517,6 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	//pinMode(Pinout::Assignment::TFT_CS, OUTPUT);
 	//digitalWrite(Pinout::Assignment::TFT_CS	, HIGH); 
 	tft.begin();
-	
 	//uint8_t x = tft.readcommand8(ILI9341_RDMODE);
 	/*Serial.print("Display Power Mode: 0x"); Serial.println(x, HEX);
 	x = tft.readcommand8(ILI9341_RDMADCTL);
@@ -601,7 +600,7 @@ void DisplayRGBModule::drawStaticContent(){
 	clearWithGrid(gui::Position{0, 0}, gui::Size{tft.width(), tft.height()});
 
 	int16_t screenWidth = tft.width();
-	gui::Window logoWindow{10, 30, &DPS_LogoSmall, false, gui::Flip::VERTICALLY};
+	gui::Window logoWindow{10, 30, DPS_LogoSmall, false, gui::Flip::VERTICALLY};
 
 	drawWindowBitPixel(logoWindow, HELL_MAIN_COLOR, Some(OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y + 35, screenWidth, 4);

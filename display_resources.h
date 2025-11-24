@@ -4,12 +4,9 @@
 #include "gui.h"
 
 
-//#include "compression.h"
+#include "compression.h"
 
-inline const PROGMEM gui::ImageBuffer DPS_SmallStarOneBMP = {
-	.size = {.width = 11, .height = 11},
-	.image = {
-		//              x 
+constexpr uint8_t DPS_SmallStarOneBMPUncompressed[] = {
 		0b00000100, 0b00000000,
 		0b00001110, 0b00000000,
 		0b00001110, 0b00000000,
@@ -21,13 +18,16 @@ inline const PROGMEM gui::ImageBuffer DPS_SmallStarOneBMP = {
 		0b01111111, 0b11000000,
         0b01010001, 0b11000000,
         0b00100000, 0b10000000,
-	}
 };
 
-inline const PROGMEM gui::ImageBuffer DPS_ArrowRightTinyBMP = {
-	.size = {.width = 11, .height = 11},
-	.image = {
-		//              x 
+inline const PROGMEM auto DPS_SmallStarOneBMP = COMPRESS_IMAGE(
+	11, 11,
+	true,
+	DPS_SmallStarOneBMPUncompressed
+);
+
+
+constexpr uint8_t DPS_ArrowRightTinyBMPUncompressed[] = {
 		0b00000100, 0b00000000,
         0b00000110, 0b00000000,
 		0b00000111, 0b00000000,
@@ -39,14 +39,16 @@ inline const PROGMEM gui::ImageBuffer DPS_ArrowRightTinyBMP = {
 		0b00000111, 0b00000000,
 		0b00000110, 0b00000000,
 		0b00000100, 0b00000000,
-	}
 };
+inline const PROGMEM auto DPS_ArrowRightTinyBMP = COMPRESS_IMAGE(
+	11, 11,
+	true,
+	DPS_SmallStarOneBMPUncompressed
+);
 
 
-inline const PROGMEM gui::ImageBuffer DPS_ArrowUpTinyBMP = {
-	.size = {.width = 11, .height = 11},
-	.image = {
-		//              x 
+
+constexpr uint8_t DPS_ArrowUpTinyBMPUncompressed[] = {
 		0b00000100, 0b00000000,
         0b00001110, 0b00000000,
 		0b00011111, 0b00000000,
@@ -58,8 +60,12 @@ inline const PROGMEM gui::ImageBuffer DPS_ArrowUpTinyBMP = {
 		0b00001110, 0b00000000,
 		0b00001110, 0b00000000,
 		0b00001110, 0b00000000,
-	}
 };
+inline const PROGMEM auto DPS_ArrowUpTinyBMP = COMPRESS_IMAGE(
+	11, 11,
+	true,
+	DPS_ArrowUpTinyBMPUncompressed
+);
 
 
 #ifdef UNUSED_BUF
@@ -83,24 +89,33 @@ inline const PROGMEM gui::ImageBuffer DPS_Eagle1TinyFlipped = {
 };
 #endif
 
-inline const PROGMEM gui::ImageBuffer DPS_Eagle1Mid = {
-	.size = {.width = 19, .height = 19},
-	.image = {
+
+
+
+
+constexpr uint8_t DPS_Eagle1MidUncompressed[] = {
 		0x06, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x0f, 0x80, 0x00, 0x07, 0xc0, 0x00, 0x43, 0xe0, 0x00, 0xe3, 
 		0xf0, 0x00, 0xf1, 0xf8, 0x00, 0x79, 0xfc, 0x00, 0x3c, 0xff, 0xc0, 0x1e, 0xff, 0xe0, 0x3c, 0xff, 
 		0xc0, 0x79, 0xfc, 0x00, 0xf1, 0xf8, 0x00, 0xe3, 0xf0, 0x00, 0x43, 0xe0, 0x00, 0x07, 0xc0, 0x00, 
 		0x0f, 0x80, 0x00, 0x0f, 0x00, 0x00, 0x06, 0x00, 0x00
-	}
 };
 
+inline const PROGMEM auto DPS_Eagle1Mid = COMPRESS_IMAGE(
+	19, 19,
+	true,
+	DPS_Eagle1MidUncompressed
+);
 
-
-inline const PROGMEM gui::ImageBuffer DPS_500kgBombHorMid = {
-	.size = {.width = 14, .height = 7},
-	.image = {
-		0xc7, 0xe0, 0xef, 0xf0, 0x7f, 0xf8, 0x3f, 0xfc, 0x7f, 0xf8, 0xef, 0xf0, 0xc7, 0xe0
-	}
+constexpr uint8_t DPS_500kgBombHorMidUncompressed[] = {
+	0xc7, 0xe0, 0xef, 0xf0, 0x7f, 0xf8, 0x3f, 0xfc, 0x7f, 0xf8, 0xef, 0xf0, 0xc7, 0xe0
 };
+
+inline const PROGMEM auto DPS_500kgBombHorMid = COMPRESS_IMAGE(
+	14, 7,
+	true,
+	DPS_500kgBombHorMidUncompressed
+);
+
 #ifdef DISABLED_BUF
 inline const PROGMEM gui::ImageBuffer DPS_500kgBombVerMid = {
 	.size = {.width = 7, .height = 14},
@@ -114,9 +129,8 @@ inline const PROGMEM gui::ImageBuffer DPS_500kgBombVerMid = {
 constexpr uint8_t BIG_ARROW_WIDTH 	= 23;
 constexpr uint8_t BIG_ARROW_HEIGHT 	= 23;
 
-inline const PROGMEM gui::ImageBuffer DPS_ArrowUpBigBMP = {
-	.size = {.width = BIG_ARROW_WIDTH, .height = BIG_ARROW_HEIGHT},
-	.image = {
+
+constexpr uint8_t DPS_ArrowUpBigBMPUncompressed[] = {
 		0b00000000, 0b00010000,0b00000000,
 		0b00000000, 0b00111000,0b00000000,
 		0b00000000, 0b01111100,0b00000000,
@@ -140,18 +154,16 @@ inline const PROGMEM gui::ImageBuffer DPS_ArrowUpBigBMP = {
 		0b00000111, 0b11111111,0b11000000,
 		0b00000111, 0b11111111,0b11000000,
 		0b00000111, 0b11111111,0b11000000,
-	}
 };
 
+inline const PROGMEM auto DPS_ArrowUpBigBMP = COMPRESS_IMAGE(
+	BIG_ARROW_WIDTH, BIG_ARROW_HEIGHT,
+	true,
+	DPS_ArrowUpBigBMPUncompressed
+);
 
 
-
-
-
-
-inline const PROGMEM gui::ImageBuffer DPS_ArrowLeftBigBMP = {
-	.size = {.width = BIG_ARROW_WIDTH, .height = BIG_ARROW_HEIGHT},
-	.image = {
+constexpr uint8_t DPS_ArrowLeftBigBMPUncompressed[] = {
 		0b00000000, 0b00010000,0b00000000,
 		0b00000000, 0b00110000,0b00000000,
 		0b00000000, 0b01110000,0b00000000,
@@ -175,15 +187,20 @@ inline const PROGMEM gui::ImageBuffer DPS_ArrowLeftBigBMP = {
 		0b00000000, 0b01010000,0b00000000,
 		0b00000000, 0b00110000,0b00000000,
 		0b00000000, 0b00010000,0b00000000,
-	}
 };
+
+inline const PROGMEM auto DPS_ArrowLeftBigBMP = COMPRESS_IMAGE(
+	BIG_ARROW_WIDTH, BIG_ARROW_HEIGHT,
+	true,
+	DPS_ArrowLeftBigBMPUncompressed
+);
 
 constexpr uint8_t BIG_SELECTOR_HEIGHT = 9;
 
 
-inline const PROGMEM gui::ImageBuffer DPS_ArrowSelectorLowerBMP = {
-	.size = {.width = 29, .height = BIG_SELECTOR_HEIGHT},
-	.image = {
+
+
+constexpr uint8_t DPS_ArrowSelectorLowerBMPUncompressed[] = {
 		0b00000000, 0b00000010,0b00000000,0b00000000,
 		0b00000000, 0b00000111,0b00000000,0b00000000,
 		0b00000000, 0b00011111,0b11000000,0b00000000,
@@ -193,19 +210,15 @@ inline const PROGMEM gui::ImageBuffer DPS_ArrowSelectorLowerBMP = {
 		0b00001111, 0b11111111,0b11111111,0b11000000,
 		0b00111111, 0b11111111,0b11111111,0b11110000,
 		0b11111111, 0b11111111,0b11111111,0b11111100,
-	}
 };
 
+inline const PROGMEM auto DPS_ArrowSelectorLowerBMP = COMPRESS_IMAGE(
+	29, BIG_SELECTOR_HEIGHT,
+	true,
+	DPS_ArrowSelectorLowerBMPUncompressed
+);
 
-
-
-
-
-
-inline const PROGMEM gui::ImageBuffer DPS_LogoSmall =
-{
-	.size = {.width = 220, .height = 30},
-	.image = {
+constexpr uint8_t DPS_LogoSmallUncompressed[] = {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -259,8 +272,17 @@ inline const PROGMEM gui::ImageBuffer DPS_LogoSmall =
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-	}
+
 };
+
+
+//inline constexpr PROGMEM auto DPS_LogoSmall = compression::compiletimeCompress1Bitmap<220,30, true, compression::computeCompressedSize(DPS_LogoSmallUncompressed)>(DPS_LogoSmallUncompressed); 
+inline const PROGMEM auto DPS_LogoSmall = COMPRESS_IMAGE(
+	220, 30,
+	true,
+	DPS_LogoSmallUncompressed
+);
+
 #ifdef DISABLED_BUF
 inline const PROGMEM gui::ImageBuffer DPS_Eagle1 = {
 	.size = {.width = 31, .height = 29},

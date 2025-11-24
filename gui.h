@@ -6,7 +6,7 @@
 
 #include "shared/optional.h"
 
-//#include "decompression.h"
+#include "decompression.h"
 
 namespace gui{
 
@@ -39,11 +39,14 @@ struct Size {
 		return width != other.width || height != other.height;
 	}
 };
+
+/*
 struct ImageBuffer{
 	const Size size;
 	const uint8_t image[];
 };
-
+*/
+using CompressedImageBuffer = compression::CompressedImageTerminated;
 
 enum Flip : uint8_t{
 	NONE,
@@ -126,7 +129,7 @@ public:
 #else
 
 public: 
-	constexpr Window(int16_t x, int16_t y, const ImageBuffer* imageBuffer, bool isHidden = false, gui::Flip flipSetting = gui::Flip::NONE)
+	constexpr Window(int16_t x, int16_t y,  CompressedImageBuffer imageBuffer, bool isHidden = false, gui::Flip flipSetting = gui::Flip::NONE)
 	 : position(Position{x, y}), b_isHidden(isHidden), b_needsUpdate(!isHidden), imageBuffer(imageBuffer) ,flipSetting(flipSetting) {}
 
 	inline void forceUpdate() {
@@ -170,13 +173,13 @@ public:
 
 #endif
 public:
-	inline void setImageBuffer(const ImageBuffer* imgBuffer) {
+	inline void setImageBuffer(CompressedImageBuffer imgBuffer) {
 		imageBuffer = imgBuffer;
 		if(!isHidden()){
 			forceUpdate();
 		}
 	}
-	inline const ImageBuffer* getImageBuffer() const {
+	inline CompressedImageBuffer getImageBuffer() const {
 		return imageBuffer;
 	}
 
@@ -199,7 +202,7 @@ private:
 	};
 #endif
 	
-	const ImageBuffer* imageBuffer;
+	CompressedImageBuffer imageBuffer;
 };
 
 class AnimatedMovement {
@@ -349,7 +352,7 @@ Color565 lerpColor565(Color565 color_start, Color565 color_end, uint16_t duratio
 void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 color, Option<Color565> maybeOutlineColor = None<Color565>(), Option<gui::ClearSettings> maybeClear = None<gui::ClearSettings>());
 void drawHorizontalSeparatorWithBorders(Adafruit_ILI9341& tft, int16_t x, int16_t y, int16_t width, int16_t height);
 
-void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor, gui::Flip flip = gui::Flip::NONE);
+void drawBitmapWithOutline(Adafruit_ILI9341& tft, CompressedImageBuffer::iterator imageBufferIterator, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor, gui::Flip flip = gui::Flip::NONE);
 void drawGeneratedGridPattern(Adafruit_ILI9341& tft, int16_t topX, int16_t topY, int16_t width, int16_t height, int16_t gridSpacing, Color565 lineColor, Color565 backgroundColor, int16_t offsetX = 0, int16_t offsetY = 0);
 
 

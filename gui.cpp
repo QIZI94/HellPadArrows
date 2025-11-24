@@ -91,24 +91,24 @@ void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::C
 	}
 	
 	const gui::Position windowPosition = window.getPosition();
-	const gui::ImageBuffer* imageBuffer = window.getImageBuffer();
-	if(imageBuffer == nullptr){
+	const CompressedImageBuffer imageBuffer = window.getImageBuffer();
+	if(imageBuffer.compressedStorage == nullptr){
 		return;
 	}
 
 	gui::Size windowSize;
-	PROGMEM_READ_STRUCTURE(&windowSize, &imageBuffer->size);
+	PROGMEM_READ_STRUCTURE(&windowSize, &imageBuffer.compressedStorage->size);
 
 	if(const gui::ClearSettings* p_clearSettings = maybeClear.ptr_value()){
 		p_clearSettings->clearFn(p_clearSettings->position, windowSize);
 	}
 	if(!window.isHidden()){
 		Color565 outlineColor = maybeOutlineColor.valueOr(mainColor);
-		drawBitmapWithOutline(tft, imageBuffer->image, windowPosition.x, windowPosition.y, windowSize.width, windowSize.height, mainColor, outlineColor, window.getFlipSetting());
+		drawBitmapWithOutline(tft, imageBuffer.iterate(), windowPosition.x, windowPosition.y, windowSize.width, windowSize.height, mainColor, outlineColor, window.getFlipSetting());
 	}
 }
 
-void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor, gui::Flip flip){
+void drawBitmapWithOutline(Adafruit_ILI9341& tft, CompressedImageBuffer::iterator imageBufferIterator, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor, gui::Flip flip){
 	constexpr int16_t BITWISE_MODULO_8BITS_MASK = 7;
 	constexpr uint8_t IS_PIXEL_MASK = 0x80;
 	
@@ -116,17 +116,12 @@ void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t 
   	uint16_t currentByteLoadedIndex = 0;
 	uint8_t b = 0;
 	bool wasPreviousPointPixel = false;
-	int16_t adjustedHeight = -(height - 1);
 
-	
-
-	auto getByteIndexInBitset = [](int16_t x, int16_t y, int16_t byteWidth){
-		return y * byteWidth + x / 8;
-	};
 	tft.startWrite();
+	bool alreadyPreloaded = false;
 	for (int16_t j = 0; j < height; j++) {
 		bool wasPreviousPointPixel = false;
-		bool alreadyPreloaded = false;
+		
 		for (int16_t i = 0; i < width; i++) {
 			if (i & BITWISE_MODULO_8BITS_MASK){
 				b <<= 1;
@@ -137,7 +132,14 @@ void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t 
 					alreadyPreloaded = false;
 				}
 				else {
-					b = pgm_read_byte(image++);//(&image[currentByteLoadedIndex]);
+					Option<uint8_t> next = imageBufferIterator.next();
+					if(const uint8_t* loadedByte = next.ptr_value()){
+
+						b = *loadedByte;
+					}
+					else {
+						return;
+					}
 				}
 				
 			}
@@ -158,8 +160,15 @@ void drawBitmapWithOutline(Adafruit_ILI9341& tft, const uint8_t* image, int16_t 
 						n = (b << 1);
 					}
 					else {
-						n = b = pgm_read_byte(image++);
-						alreadyPreloaded = true;
+						Option<uint8_t> nextNeighborByte = imageBufferIterator.next();
+						if(const uint8_t* loadedByte = nextNeighborByte.ptr_value()){
+							n = b = *loadedByte;
+							alreadyPreloaded = true;
+						}
+						else {
+							
+							return;
+						}
 					}
 
 					if (n & IS_PIXEL_MASK == 0){

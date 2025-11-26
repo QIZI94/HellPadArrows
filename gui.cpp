@@ -132,14 +132,7 @@ void drawBitmapWithOutline(Adafruit_ILI9341& tft, CompressedImageBuffer::iterato
 					alreadyPreloaded = false;
 				}
 				else {
-					Option<uint8_t> next = imageBufferIterator.next();
-					if(const uint8_t* loadedByte = next.ptr_value()){
-
-						b = *loadedByte;
-					}
-					else {
-						return;
-					}
+					b = imageBufferIterator.next().valueCopyUnchecked();
 				}
 				
 			}
@@ -160,15 +153,8 @@ void drawBitmapWithOutline(Adafruit_ILI9341& tft, CompressedImageBuffer::iterato
 						n = (b << 1);
 					}
 					else {
-						Option<uint8_t> nextNeighborByte = imageBufferIterator.next();
-						if(const uint8_t* loadedByte = nextNeighborByte.ptr_value()){
-							n = b = *loadedByte;
-							alreadyPreloaded = true;
-						}
-						else {
-							
-							return;
-						}
+						n = b = imageBufferIterator.next().valueCopyUnchecked();
+						alreadyPreloaded = true;
 					}
 
 					if (n & IS_PIXEL_MASK == 0){

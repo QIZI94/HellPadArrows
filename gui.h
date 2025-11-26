@@ -46,7 +46,7 @@ struct ImageBuffer{
 	const uint8_t image[];
 };
 */
-using CompressedImageBuffer = compression::CompressedImageTerminated;
+using CompressedImageBuffer = compression::CompressedImageUnchecked;
 
 enum Flip : uint8_t{
 	NONE,

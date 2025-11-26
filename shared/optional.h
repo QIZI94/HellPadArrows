@@ -7,7 +7,7 @@ public:
     Option() : mb_hasValue(false){
         memset(&m_value, 0, sizeof(T));
     }
-    Option(T value) : m_value(value), mb_hasValue(true){}
+    constexpr Option(T value) : m_value(value), mb_hasValue(true){}
 
     bool hasValue() const {
         return mb_hasValue;
@@ -27,6 +27,20 @@ public:
 	const T& valueOr(const T& other){
 		return mb_hasValue ? m_value : other;
 	}
+	const T valueCopyOr(T other) const{
+		mb_hasValue ? m_value : other;
+	}
+	T& valueUnchecked() {
+		return m_value;
+	}
+	const T& valueUnchecked() const {
+		return m_value;
+	}
+	T valueCopyUnchecked() const {
+		return m_value;
+	}
+	
+	
 private:
     T m_value;
     bool mb_hasValue = false;

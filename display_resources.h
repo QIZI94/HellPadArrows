@@ -6,6 +6,8 @@
 
 #include "compression.h"
 
+constexpr bool MAYBE_NULL_TERMINATED = true;
+
 constexpr uint8_t DPS_SmallStarOneBMPUncompressed[] = {
 		0b00000100, 0b00000000,
 		0b00001110, 0b00000000,
@@ -22,7 +24,7 @@ constexpr uint8_t DPS_SmallStarOneBMPUncompressed[] = {
 
 inline const PROGMEM auto DPS_SmallStarOneBMP = COMPRESS_IMAGE(
 	11, 11,
-	true,
+	MAYBE_NULL_TERMINATED,
 	DPS_SmallStarOneBMPUncompressed
 );
 
@@ -42,8 +44,8 @@ constexpr uint8_t DPS_ArrowRightTinyBMPUncompressed[] = {
 };
 inline const PROGMEM auto DPS_ArrowRightTinyBMP = COMPRESS_IMAGE(
 	11, 11,
-	true,
-	DPS_SmallStarOneBMPUncompressed
+	MAYBE_NULL_TERMINATED,
+	DPS_ArrowRightTinyBMPUncompressed
 );
 
 
@@ -63,7 +65,7 @@ constexpr uint8_t DPS_ArrowUpTinyBMPUncompressed[] = {
 };
 inline const PROGMEM auto DPS_ArrowUpTinyBMP = COMPRESS_IMAGE(
 	11, 11,
-	true,
+	MAYBE_NULL_TERMINATED,
 	DPS_ArrowUpTinyBMPUncompressed
 );
 
@@ -102,7 +104,7 @@ constexpr uint8_t DPS_Eagle1MidUncompressed[] = {
 
 inline const PROGMEM auto DPS_Eagle1Mid = COMPRESS_IMAGE(
 	19, 19,
-	true,
+	MAYBE_NULL_TERMINATED,
 	DPS_Eagle1MidUncompressed
 );
 
@@ -112,7 +114,7 @@ constexpr uint8_t DPS_500kgBombHorMidUncompressed[] = {
 
 inline const PROGMEM auto DPS_500kgBombHorMid = COMPRESS_IMAGE(
 	14, 7,
-	true,
+	MAYBE_NULL_TERMINATED,
 	DPS_500kgBombHorMidUncompressed
 );
 
@@ -158,7 +160,7 @@ constexpr uint8_t DPS_ArrowUpBigBMPUncompressed[] = {
 
 inline const PROGMEM auto DPS_ArrowUpBigBMP = COMPRESS_IMAGE(
 	BIG_ARROW_WIDTH, BIG_ARROW_HEIGHT,
-	true,
+	MAYBE_NULL_TERMINATED,
 	DPS_ArrowUpBigBMPUncompressed
 );
 
@@ -191,7 +193,7 @@ constexpr uint8_t DPS_ArrowLeftBigBMPUncompressed[] = {
 
 inline const PROGMEM auto DPS_ArrowLeftBigBMP = COMPRESS_IMAGE(
 	BIG_ARROW_WIDTH, BIG_ARROW_HEIGHT,
-	true,
+	MAYBE_NULL_TERMINATED,
 	DPS_ArrowLeftBigBMPUncompressed
 );
 
@@ -214,7 +216,7 @@ constexpr uint8_t DPS_ArrowSelectorLowerBMPUncompressed[] = {
 
 inline const PROGMEM auto DPS_ArrowSelectorLowerBMP = COMPRESS_IMAGE(
 	29, BIG_SELECTOR_HEIGHT,
-	true,
+	MAYBE_NULL_TERMINATED,
 	DPS_ArrowSelectorLowerBMPUncompressed
 );
 
@@ -279,9 +281,11 @@ constexpr uint8_t DPS_LogoSmallUncompressed[] = {
 //inline constexpr PROGMEM auto DPS_LogoSmall = compression::compiletimeCompress1Bitmap<220,30, true, compression::computeCompressedSize(DPS_LogoSmallUncompressed)>(DPS_LogoSmallUncompressed); 
 inline const PROGMEM auto DPS_LogoSmall = COMPRESS_IMAGE(
 	220, 30,
-	true,
+	MAYBE_NULL_TERMINATED,
 	DPS_LogoSmallUncompressed
 );
+
+
 
 #ifdef DISABLED_BUF
 inline const PROGMEM gui::ImageBuffer DPS_Eagle1 = {

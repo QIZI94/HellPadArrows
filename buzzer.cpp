@@ -139,12 +139,12 @@ static const PROGMEM Sound MELODY_VOLUME_TEST[]{
 	Sound::END()
 };
 
-static const SoundMapping soundMapping[]{
+static const SoundMapping PROGMEM soundMapping[]{
 	{BuzzerSoundsModule::SoundPreset::BUTTON_PRESS, MELODY_KEY_PRESS},
 	{BuzzerSoundsModule::SoundPreset::FAIL, MELODY_FAIL},
-	//{BuzzerSoundsModule::SoundPreset::SUCCESS, MELODY_SUCCESS},
-	//{BuzzerSoundsModule::SoundPreset::VOLUME_TEST, MELODY_VOLUME_TEST},
-	//{BuzzerSoundsModule::SoundPreset::LIBER_TEA, OF_LIBER_TEA},
+	{BuzzerSoundsModule::SoundPreset::SUCCESS, MELODY_SUCCESS},
+	{BuzzerSoundsModule::SoundPreset::VOLUME_TEST, MELODY_VOLUME_TEST},
+	{BuzzerSoundsModule::SoundPreset::LIBER_TEA, OF_LIBER_TEA},
 
 };
 
@@ -212,12 +212,15 @@ uint8_t BuzzerSoundsModule::getCurrentUsedPin() const {
 }
 
 void BuzzerSoundsModule::playPreset(SoundPreset soundPreset){
-	//SoundMapping soundMappedList[CONST_LENGTH(soundMapping)];
-	//memcpy_P(soundMappedList, soundMapping, sizeof(soundMappedList));
 
-	for(SoundMapping entry : soundMapping){
-		if(entry.soundPreset == soundPreset){
-			playMelody(entry.p_sound);
+	const SoundMapping* soundMappingBegin = soundMapping;
+	const SoundMapping* soundMappingEnd = &soundMapping[CONST_LENGTH(soundMapping)];
+
+	SoundMapping loadedSoundMappedEntry;
+	for(const SoundMapping* it = soundMappingBegin; soundMappingBegin != soundMappingEnd; ++it){
+		memcpy_P(&loadedSoundMappedEntry, it, sizeof(SoundMapping));
+		if(loadedSoundMappedEntry.soundPreset == soundPreset){
+			playMelody(loadedSoundMappedEntry.p_sound);
 			break;
 		}
 	}

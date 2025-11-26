@@ -27,7 +27,7 @@ constexpr uint16_t computeCompressedSize(const uint8_t (&image)[N]) {
             
         }
     }
-    return compressedIndex;
+    return compressedIndex + 1;
 }
 
 

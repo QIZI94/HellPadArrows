@@ -49,7 +49,7 @@ public:
         next = nullptr;
     }
 
-    void reset(uint32_t interval){ // in ms
+    void reset(uint16_t interval){ // in ms
         countdown = interval/TICK_VALUE;
 		
     }
@@ -90,7 +90,7 @@ private:
             countdown -= 1;
         }
     }
-    volatile uint32_t countdown = 0;
+    volatile uint8_t countdown = 0;
     volatile StaticTimer* prev = nullptr;
     volatile StaticTimer* next = nullptr;
 };

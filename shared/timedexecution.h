@@ -109,7 +109,7 @@ public:
         execPtr = exec;
     }
 
-	void setup(ExecFunPtr execFunction, uint32_t interval, bool enableTimer = true){
+	void setup(ExecFunPtr execFunction, uint16_t interval, bool enableTimer = true){
 		setExecFunction(execFunction);
 		timer.reset(interval);
 		if(enableTimer){
@@ -118,7 +118,7 @@ public:
 		}
 	}
 
-	void restart(uint32_t interval){
+	void restart(uint16_t interval){
 		timer.reset(interval);
 		enable();
 		timer.enable();

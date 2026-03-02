@@ -129,8 +129,8 @@ public:
 #else
 
 public: 
-	constexpr Window(int16_t x, int16_t y,  CompressedImageBuffer imageBuffer, bool isHidden = false, gui::Flip flipSetting = gui::Flip::NONE)
-	 : position(Position{x, y}), b_isHidden(isHidden), b_needsUpdate(!isHidden), imageBuffer(imageBuffer) ,flipSetting(flipSetting) {}
+	constexpr Window(int16_t x, int16_t y,  CompressedImageBuffer imageBuffer, uint8_t colorPaletteIndex = 0, bool isHidden = false, gui::Flip flipSetting = gui::Flip::NONE)
+	 : position(Position{x, y}), b_isHidden(isHidden), b_needsUpdate(!isHidden), imageBuffer(imageBuffer) ,colorPaletteIndex(colorPaletteIndex) ,flipSetting(flipSetting) {}
 
 	inline void forceUpdate() {
 		b_needsUpdate = true;
@@ -161,7 +161,13 @@ public:
 		}
 	}
 
-	
+	inline void setColorPaletteIndex(uint8_t colorPaletteIndex){
+		this->colorPaletteIndex = colorPaletteIndex;
+	}
+
+	inline uint8_t getColorPaletteIndex() const {
+		return colorPaletteIndex;
+	}
 
 	inline const Position& getPosition() const {
 		return position;
@@ -189,16 +195,30 @@ public:
 	inline gui::Flip getFlipSetting() const {
 		return flipSetting;
 	}
+public:
+	static void SetColorPaletteBuffer(const Color565* colorPaletteBuffer){
+		*GetColorPaletteBuffer() = colorPaletteBuffer;
+	}
+
+	static Option<Color565> LoadColorFromColorPalette(uint8_t colorPaletteIndex);
+
+private:
+	static const Color565** GetColorPaletteBuffer() {
+		static const Color565* colorPaletteBuffer = nullptr;
+		return &colorPaletteBuffer; 
+	}
 
 private:
 #ifdef WINDOW_OPTIMIZE_RAM
 	Properties properties;
 #else 
 	Position position;
+	bool b_isHidden;// : 1;
+	bool b_needsUpdate;// : 1;
 	struct{
-		bool b_isHidden;// : 1;
-		bool b_needsUpdate;// : 1;
-		gui::Flip flipSetting;// : 6;
+		
+		gui::Flip flipSetting : 4;// : 6;
+		uint8_t colorPaletteIndex : 4;
 	};
 #endif
 	
@@ -349,7 +369,7 @@ int16_t lerp(int16_t start, int16_t end, uint16_t durationMs, uint16_t elapsedTt
 Position lerp(const Position& start, const Position& end, uint16_t durationMs, uint16_t elapsedTtimeMs);
 Color565 lerpColor565(Color565 color_start, Color565 color_end, uint16_t durationMs, uint16_t elapsedTtimeMs);
 
-void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 color, Option<Color565> maybeOutlineColor = None<Color565>(), Option<gui::ClearSettings> maybeClear = None<gui::ClearSettings>());
+void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, Option<Color565> maybeOutlineColor = None<Color565>(), Option<gui::ClearSettings> maybeClear = None<gui::ClearSettings>());
 void drawHorizontalSeparatorWithBorders(Adafruit_ILI9341& tft, int16_t x, int16_t y, int16_t width, int16_t height);
 
 void drawBitmapWithOutline(Adafruit_ILI9341& tft, CompressedImageBuffer::iterator imageBufferIterator, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor, gui::Flip flip = gui::Flip::NONE);

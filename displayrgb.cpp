@@ -14,6 +14,7 @@ struct ArrowToImageMapping{
 
 	constexpr ArrowToImageMapping(Arrow arrow, gui::CompressedImageBuffer image, gui::Flip flip = gui::Flip::NONE)
 	: image(image), arrow(arrow), flip(flip) {}
+	ArrowToImageMapping(){}
 
 //	const Arrow arrow;
 
@@ -24,13 +25,6 @@ struct ArrowToImageMapping{
 	};
 };
 
-struct ColorAndOutline{
-	gui::Color565 mainColor;
-	gui::Color565 outlineColor;
-};
-
-
-
 //constexpr gui::Color565 CLEAR_COLOR 					= gui::ConvertRGBtoRGB565(0,140,235);//ILI9341_DARKCYAN;
 //constexpr gui::Color565 GRIDLINE_COLOR					= gui::ConvertRGBtoRGB565(0,140,240);//ILI9341_NAVY;
 constexpr gui::Color565 CLEAR_COLOR 					= ILI9341_DARKCYAN;
@@ -40,6 +34,7 @@ constexpr gui::Color565 INVALID_COMBINATION_COLOR		= gui::ConvertRGBtoRGB565(255
 constexpr gui::Color565 OUTLINE_COLOR					= ILI9341_BLACK;
 constexpr gui::Color565 SELECTOR_COLOR					= gui::ConvertRGBtoRGB565(255,150,0);//ILI9341_ORANGE;
 constexpr gui::Color565 SELECTOR_OUTLINE_COLOR			= ILI9341_BLACK;
+constexpr gui::Color565 EAGLE1_COLOR					= ILI9341_RED;
 
 constexpr int16_t GRID_LINES_OFFSET_X 	= +1;
 constexpr int16_t GRID_LINES_OFFSET_Y 	= +5;
@@ -88,7 +83,7 @@ constexpr int16_t ARROWS_TINY_OFFSETS_HORIZONTAL[ARROW_MAX_SLOTS] = {
 
 
 
-Adafruit_ILI9341 tft(
+static Adafruit_ILI9341 tft(
 	Pinout::Assignment::TFT_CS,
 	Pinout::Assignment::TFT_DC
 );
@@ -96,68 +91,81 @@ Adafruit_ILI9341 tft(
 static uint32_t frameStartTime = 0;
 static uint32_t averageFPS = 0;
 static uint32_t averageSamples = 300;
-static gui::Color565 slotArrowColor = HELL_MAIN_COLOR; 
 
 
 
-const ArrowToImageMapping bigArrowMapping[]{
+
+static const ArrowToImageMapping PROGMEM bigArrowMapping[]{
 	{Arrow::UP,		DPS_ArrowUpBigBMP,		gui::Flip::NONE},
 	{Arrow::DOWN,	DPS_ArrowUpBigBMP,		gui::Flip::VERTICALLY},
 	{Arrow::LEFT,	DPS_ArrowLeftBigBMP,	gui::Flip::NONE},
 	{Arrow::RIGHT,	DPS_ArrowLeftBigBMP,	gui::Flip::HORIZONTALLY},
 };
 
-const ArrowToImageMapping tinyArrowMapping[]{
+static const ArrowToImageMapping PROGMEM tinyArrowMapping[]{
 	{Arrow::UP,		DPS_ArrowUpTinyBMP,	gui::Flip::NONE},
 	{Arrow::DOWN,	DPS_ArrowUpTinyBMP,	gui::Flip::VERTICALLY},
 	{Arrow::LEFT,	DPS_ArrowRightTinyBMP,	gui::Flip::HORIZONTALLY},
 	{Arrow::RIGHT,	DPS_ArrowRightTinyBMP, gui::Flip::NONE},
 };
 
+const gui::Color565 PROGMEM colorPaletteBuf[]{
+	INVALID_COMBINATION_COLOR,
+	HELL_MAIN_COLOR,
+	SELECTOR_COLOR,
+	EAGLE1_COLOR
+	
+};
 
+enum class ColorPalette : uint8_t{
+	INVALID_COMBINATION_COLOR,
+	HELL_MAIN_COLOR,
+	SELECTOR_COLOR,
+	EAGLE1_COLOR
+};
 
 
 static gui::Window arrowArrayWindowSlots[][ARROW_MAX_SLOTS] = {
 	// MAIN ARROWS
 	{
-		gui::Window(ARROWS_OFFSETS_HORIZONTAL[0] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_OFFSETS_HORIZONTAL[1] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_OFFSETS_HORIZONTAL[2] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_OFFSETS_HORIZONTAL[3] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_OFFSETS_HORIZONTAL[4] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_OFFSETS_HORIZONTAL[5] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_OFFSETS_HORIZONTAL[6] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[0] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[1] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[2] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[3] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[4] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[5] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_OFFSETS_HORIZONTAL[6] + ARROWS_OFFSET_X, ARROWS_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
 	},
 	// PRIMARY SUGGESTION ARROWS
 	{
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[0] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[1] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[2] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[3] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[4] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[5] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[6] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[0] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[1] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[2] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[3] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[4] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[5] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[6] + ARROWS_SUGGESTION_PRIMARY_OFFSET_X, ARROWS_SUGGESTION_PRIMARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
 	},
 	// SECONDARY SUGGESTION ARROWS
 	{
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[0] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[1] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[2] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[3] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[4] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[5] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
-		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[6] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[0] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[1] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[2] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[3] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[4] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[5] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
+		gui::Window(ARROWS_TINY_OFFSETS_HORIZONTAL[6] + ARROWS_SUGGESTION_SECONDARY_OFFSET_X, ARROWS_SUGGESTION_SECONDARY_OFFSET_Y, nullptr, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
 	}
 
 };
 
 
 static gui::Window slotUpperSelection(
-	640, ARROWS_OFFSET_Y - BIG_SELECTOR_HEIGHT - 5, DPS_ArrowSelectorLowerBMP, true, gui::Flip::VERTICALLY
+	640, ARROWS_OFFSET_Y - BIG_SELECTOR_HEIGHT - 5, DPS_ArrowSelectorLowerBMP, uint8_t(ColorPalette::SELECTOR_COLOR), true, gui::Flip::VERTICALLY
 );
 
 static gui::Window slotLowerSelection(
-	640, ARROWS_OFFSET_Y + BIG_ARROW_HEIGHT + 5, DPS_ArrowSelectorLowerBMP, true
+	640, ARROWS_OFFSET_Y + BIG_ARROW_HEIGHT + 5, DPS_ArrowSelectorLowerBMP, uint8_t(ColorPalette::SELECTOR_COLOR), true
 );
 
 
@@ -190,20 +198,20 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 	),*/
 	
 	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_Eagle1Mid),
+		gui::Window(0, 0, DPS_Eagle1Mid, uint8_t(ColorPalette::EAGLE1_COLOR)),
 		gui::Position{-20, 72},	gui::Position{320, 72},
 		10000,
 		false 
 	),
 	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_500kgBombHorMid),
+		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{-20, 72+6},	gui::Position{60, 72+6},
 		2300,
 		false,
 		true
 	),
 	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_500kgBombHorMid, true),
+		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
 		gui::Position{60, 72+6},	gui::Position{110+1, 200+6},
 		4000,
 		false,
@@ -212,52 +220,57 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 
 // STARS
 	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{20,290},	gui::Position{10, 331},
 		1200,
 		true, false, true
 	),
 	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{50,290},	gui::Position{40, 331},
 		1500,
 		true, false, true
 	),
 
 	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{80,290},	gui::Position{70, 331},
 		2000,
 		true, false, true
 	),
 
 	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{115,292},	gui::Position{115, 331},
 		1700,
 		true, false, true
 	),
 	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{140,290},	gui::Position{170, 331},
 		1300,
 		true, false, true
 	),
 
 	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{170,290},	gui::Position{200, 331},
 		1900,
 		true, false, true
 	),
 
 	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_SmallStarOneBMP),
+		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{200,290},	gui::Position{230, 331},
 		2200,
 		true, false, true
 	),
-
+	gui::AnimatedMovement(
+		gui::Window(0, 0, DPS_FilledCircleBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
+		gui::Position{-100, 72},	gui::Position{320, 72},
+		10000,
+		false 
+	),
 
 
 	
@@ -270,23 +283,6 @@ static gui::AnimatedMovement  *scriptedAnimations[]{
 
 static gui::AnimatedMovement** currentScriptedAnimation = &scriptedAnimations[CONST_LENGTH(scriptedAnimations)];
 
-
-struct WindowColorMapping {
-	const gui::Window* windowPtr;
-	const ColorAndOutline color;
-} const PROGMEM windowColorMapping[] = {
-	//{.windowPtr = &animEagle1.window, .color = {.mainColor = ILI9341_RED, .outlineColor = OUTLINE_COLOR}},
-	//{.windowPtr = &lowPriorityAnimations[0].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
-	//{.windowPtr = &lowPriorityAnimations[1].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
-	
-	/*{.windowPtr = &lowPriorityAnimations[2].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
-	{.windowPtr = &lowPriorityAnimations[3].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
-	{.windowPtr = &lowPriorityAnimations[4].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
-	{.windowPtr = &lowPriorityAnimations[5].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
-	{.windowPtr = &lowPriorityAnimations[6].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
-	{.windowPtr = &lowPriorityAnimations[7].window, .color = {.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR}},
-	*/
-};
 
 static void clearWithDarkGrid(gui::Position pos, gui::Size size){
 	//tft.fillRect(pos.x, pos.y, size.width, size.height, ILI9341_BLACK);
@@ -301,34 +297,22 @@ static void clearWithGrid(gui::Position pos, gui::Size size){
 	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, ILI9341_DARKGREY, ILI9341_DARKGREEN, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
 }*/
 
-static void drawWindowBitPixel(const gui::Window& window, gui::Color565 color, Option<gui::Color565> maybeOutline = None<gui::Color565>(), Option<gui::Position> clearPrevious = None<gui::Position>()){
+static void drawWindowBitPixel(const gui::Window& window, Option<gui::Color565> maybeOutline = None<gui::Color565>(), Option<gui::Position> clearPrevious = None<gui::Position>()){
 	if(const gui::Position* p_clearPosition = clearPrevious.ptr_value()){
-		gui::drawWindowBitPixel(tft, window, color, maybeOutline, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithGrid}));
+		gui::drawWindowBitPixel(tft, window, maybeOutline, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithGrid}));
 	}
 	else {
-		gui::drawWindowBitPixel(tft, window, color, maybeOutline);
+		gui::drawWindowBitPixel(tft, window, maybeOutline);
 	}
 }
 
-static void drawWindowBitPixelWithDarkGrid(const gui::Window& window, gui::Color565 color, Option<gui::Color565> maybeOutline = None<gui::Color565>(), Option<gui::Position> clearPrevious = None<gui::Position>()){
+static void drawWindowBitPixelWithDarkGrid(const gui::Window& window, Option<gui::Color565> maybeOutline = None<gui::Color565>(), Option<gui::Position> clearPrevious = None<gui::Position>()){
 	if(const gui::Position* p_clearPosition = clearPrevious.ptr_value()){
-		gui::drawWindowBitPixel(tft, window, color, maybeOutline, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithDarkGrid}));
+		gui::drawWindowBitPixel(tft, window, maybeOutline, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithDarkGrid}));
 	}
 	else {
-		gui::drawWindowBitPixel(tft, window, color, maybeOutline);
+		gui::drawWindowBitPixel(tft, window, maybeOutline);
 	}
-}
-
-
-static ColorAndOutline matchWindowWithColor(const gui::Window* windowPtr){
-	for(const WindowColorMapping& mappingEntry : windowColorMapping){
-		WindowColorMapping entry{nullptr, ColorAndOutline{0,0}};
-		PROGMEM_READ_STRUCTURE(&entry, &mappingEntry);
-		if(entry.windowPtr == windowPtr){
-			return entry.color;
-		}
-	}
-	return ColorAndOutline{.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR};
 }
 
 
@@ -343,10 +327,12 @@ void DisplayRGBModule::showArrow(uint8_t slot, Option<Arrow> arrow) {
 		gui::Window& arrowWindow = arrowArrayWindowSlots[MAIN_ARROWS_IDX][slot];
 		if(const Arrow* p_arrow = arrow.ptr_value()){			
 			arrowWindow.setHidden(false);
+			ArrowToImageMapping loadedEntry;
 			for(const ArrowToImageMapping& entry : bigArrowMapping){
-				if(entry.arrow == *p_arrow){
-					arrowWindow.setImageBuffer(entry.image);
-					arrowWindow.setFlipSetting(entry.flip);
+				PROGMEM_READ_STRUCTURE(&loadedEntry, &entry);
+				if(loadedEntry.arrow == *p_arrow){
+					arrowWindow.setImageBuffer(loadedEntry.image);
+					arrowWindow.setFlipSetting(loadedEntry.flip);
 				}
 			}
 		}
@@ -426,11 +412,12 @@ void DisplayRGBModule::showStratagemSuggestion(Option<Stratagem> maybeStratagem,
 		//suggestionArrowsEntry[arrowIdx].
 		if(showArrow){
 			Arrow arrow = arrowCombination[suggestionSlotIdx];
+			ArrowToImageMapping loadedEntry;
 			for(const ArrowToImageMapping& entry : tinyArrowMapping){
-				if(entry.arrow == arrow){
-					gui::Flip flip = gui::Flip::NONE;
-					suggestionArrow.setImageBuffer(entry.image);
-					suggestionArrow.setFlipSetting(entry.flip);
+				PROGMEM_READ_STRUCTURE(&loadedEntry, &entry);
+				if(loadedEntry.arrow == arrow){
+					suggestionArrow.setImageBuffer(loadedEntry.image);
+					suggestionArrow.setFlipSetting(loadedEntry.flip);
 				}
 			}
 		}
@@ -445,21 +432,23 @@ void DisplayRGBModule::showStratagemSuggestion(Option<Stratagem> maybeStratagem,
 
 void DisplayRGBModule::showOutcome(Option<Stratagem> maybeStratagem, bool show = true){
 	const char* outcomeText;
+	ColorPalette slotArrowColor = ColorPalette::HELL_MAIN_COLOR;
 	if(!show){
 		outcomeText = EMPTY_PROGMEM_STRING;
 	}
 	else if(const Stratagem* p_stratagem = maybeStratagem.ptr_value()){
 		outcomeText = PSTR("SUCCESSFUL");
-		slotArrowColor = HELL_MAIN_COLOR;
+		slotArrowColor = ColorPalette::HELL_MAIN_COLOR;
 		mb_wasSuccessful = true;
 	}
 	else{
 		mb_wasSuccessful = false;
-		slotArrowColor = INVALID_COMBINATION_COLOR;
+		slotArrowColor = ColorPalette::INVALID_COMBINATION_COLOR;
 		outcomeText = PSTR("FAILED");
 	}
 
 	for(gui::Window& arrowWindowSlot : arrowArrayWindowSlots[MAIN_ARROWS_IDX]){
+		arrowWindowSlot.setColorPaletteIndex(uint8_t(slotArrowColor));
 		arrowWindowSlot.forceUpdate();
 	}
 	
@@ -473,6 +462,7 @@ void DisplayRGBModule::showOutcome(Option<Stratagem> maybeStratagem, bool show =
 void DisplayRGBModule::reset() {
 	for(gui::Window& arrowWindow : arrowArrayWindowSlots[MAIN_ARROWS_IDX]){
 		arrowWindow.setHidden(true);
+		arrowWindow.setColorPaletteIndex(uint8_t(ColorPalette::HELL_MAIN_COLOR));
 	}
 
 	showSlotSelection(None<uint8_t>());
@@ -487,8 +477,6 @@ void DisplayRGBModule::reset() {
 	showOutcome(None<Stratagem>(), false);
 
 	wobble(1700, 5);
-
-	slotArrowColor = HELL_MAIN_COLOR;
 
 	update();
 }
@@ -531,7 +519,8 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	tft.setRotation(uint8_t(DisplayRGBModule::DEFAULT_ROTATION));
 	tft.setTextSize(1);
 	//tft.setScrollMargins(0, tft.height());
-
+	//tft.invertDisplay(0);
+	gui::Window::SetColorPaletteBuffer(colorPaletteBuf);
 	drawStaticContent();
 
 	/*for(gui::Window& primaryArrowWindow : primarySuggestionArrows){
@@ -553,17 +542,16 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	}*/
 
 	//timedAnimation.setup(anim, 10);
-	frameStartTime = millis();
+
 	return InitializationState::Initialized;
 }
 
 
 void DisplayRGBModule::run(){
 	uint32_t delta = millis() - frameStartTime;
-
 	if(delta >= mi_targetFpsDeltaMs){
 		frameStartTime = millis();
-		drawDynamicContent();	
+		drawDynamicContent();
 
 		/*uint32_t fps = 1000/delta;
 
@@ -600,14 +588,14 @@ void DisplayRGBModule::drawStaticContent(){
 	clearWithGrid(gui::Position{0, 0}, gui::Size{tft.width(), tft.height()});
 
 	int16_t screenWidth = tft.width();
-	gui::Window logoWindow{10, 30, DPS_LogoSmall, false, gui::Flip::VERTICALLY};
+	gui::Window logoWindow{10, 30, DPS_LogoSmall, uint8_t(ColorPalette::HELL_MAIN_COLOR), false, gui::Flip::VERTICALLY};
 
-	drawWindowBitPixel(logoWindow, HELL_MAIN_COLOR, Some(OUTLINE_COLOR));
+	drawWindowBitPixel(logoWindow, Some(OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y + 35, screenWidth, 4);
 
 	logoWindow.setPosition({10, 262});
 	logoWindow.setFlipSetting(gui::Flip::NONE);
-	drawWindowBitPixel(logoWindow, HELL_MAIN_COLOR, Some(OUTLINE_COLOR));
+	drawWindowBitPixel(logoWindow, Some(OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y - 10, screenWidth, 4);
 
 	constexpr gui::Position slotFramePosition = {.x = 19, .y = 85};
@@ -770,14 +758,14 @@ void DisplayRGBModule::drawDynamicContent() {
 			}
 			for(gui::Window& suggestionArrow : suggestionArrowsEntry){
 				
-				drawWindowBitPixelWithDarkGrid(suggestionArrow, slotArrowColor, maybeOutline, suggestionArrow.getPosition());
+				drawWindowBitPixelWithDarkGrid(suggestionArrow, maybeOutline, suggestionArrow.getPosition());
 				suggestionArrow.updated();
 			}
 		}
-		drawWindowBitPixelWithDarkGrid(slotUpperSelection, SELECTOR_COLOR, Some(SELECTOR_OUTLINE_COLOR), Some(selectedUpperSlotPreviousPosition));
+		drawWindowBitPixelWithDarkGrid(slotUpperSelection, Some(SELECTOR_OUTLINE_COLOR), Some(selectedUpperSlotPreviousPosition));
 		slotUpperSelection.updated();
 
-		drawWindowBitPixelWithDarkGrid(slotLowerSelection, SELECTOR_COLOR, Some(SELECTOR_OUTLINE_COLOR), Some(selectedLowerSlotPreviousPosition));
+		drawWindowBitPixelWithDarkGrid(slotLowerSelection, Some(SELECTOR_OUTLINE_COLOR), Some(selectedLowerSlotPreviousPosition));
 		slotLowerSelection.updated();
 
 		mb_redraw = false;
@@ -807,30 +795,25 @@ void DisplayRGBModule::drawDynamicContent() {
 		
 
 		
-		if(lowPriorityAnimationsIndex >= CONST_LENGTH(lowPriorityAnimations)){
-			lowPriorityAnimationsIndex = 0;
-		}
+		
 
 		gui::AnimatedMovement* p_animation;
 		gui::Position oldPosition;
-		ColorAndOutline matchedColor{.mainColor = HELL_MAIN_COLOR, .outlineColor = OUTLINE_COLOR};
+	
 
 		do {
 			if(lowPriorityAnimationsIndex >= CONST_LENGTH(lowPriorityAnimations)){
-				return;
+				lowPriorityAnimationsIndex = 0;
 			}
 			p_animation = &lowPriorityAnimations[lowPriorityAnimationsIndex];
 			oldPosition = p_animation->animateMovement();
-			if(lowPriorityAnimationsIndex < 1){
-				matchedColor.mainColor = matchedColor.outlineColor = ILI9341_RED;
-			}
 			lowPriorityAnimationsIndex++;
 		}while (!p_animation->window.needsUpdate());
 		
 		//ColorAndOutline matchedColor// = matchWindowWithColor(&p_animation->window);
 		
 
-		drawWindowBitPixel(p_animation->window, matchedColor.mainColor, Some(matchedColor.outlineColor), Some(oldPosition)/*p_animation->clearBeforeDraw() ? Some(oldPosition) : None<gui::Position>()*/);
+		drawWindowBitPixel(p_animation->window, Some(OUTLINE_COLOR), Some(oldPosition)/*p_animation->clearBeforeDraw() ? Some(oldPosition) : None<gui::Position>()*/);
 		if(p_animation->isMirroredY()){
 			int16_t halfDisplayWidth = tft.width();
 
@@ -838,7 +821,7 @@ void DisplayRGBModule::drawDynamicContent() {
 			gui::Position oldPositionMirrored = oldPosition;
 			positionMirrored.y = 70 - (positionMirrored.y - halfDisplayWidth);
 			oldPositionMirrored.y = 70 - (oldPositionMirrored.y - halfDisplayWidth);	
-			drawWindowBitPixel(gui::Window(positionMirrored.x, positionMirrored.y, p_animation->window.getImageBuffer(), false, gui::Flip::VERTICALLY), matchedColor.mainColor, Some(matchedColor.outlineColor), Some(oldPositionMirrored));				
+			drawWindowBitPixel(gui::Window(positionMirrored.x, positionMirrored.y, p_animation->window.getImageBuffer(), p_animation->window.getColorPaletteIndex(), false, gui::Flip::VERTICALLY), Some(OUTLINE_COLOR), Some(oldPositionMirrored));				
 		}
 		p_animation->window.updated();
 

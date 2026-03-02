@@ -54,6 +54,15 @@ Position Position::lerpTo(const Position& to, uint16_t durationMs, uint16_t elap
 	return lerp(*this, to, durationMs, elapsedTtimeMs);
 }
 
+Option<Color565> Window::LoadColorFromColorPalette(uint8_t colorPaletteIndex){
+	const Color565* colorPaletteBuffer = *GetColorPaletteBuffer();
+	if(colorPaletteBuffer != nullptr){
+		Color565 color;
+		PROGMEM_READ_STRUCTURE(&color, &colorPaletteBuffer[colorPaletteIndex]);
+		return Some(color);
+	}
+	return None<Color565>();
+}
 
 Position AnimatedMovement::animateMovement(){
 	Position oldPosition = window.getPosition();
@@ -85,7 +94,7 @@ Position AnimatedMovement::animateMovement(){
 
 
 
-void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::Color565 mainColor, Option<Color565> maybeOutlineColor, Option<ClearSettings> maybeClear){
+void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, Option<Color565> maybeOutlineColor, Option<ClearSettings> maybeClear){
 	if(!window.needsUpdate()){
 		return;
 	}
@@ -98,6 +107,8 @@ void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, gui::C
 
 	gui::Size windowSize;
 	PROGMEM_READ_STRUCTURE(&windowSize, &imageBuffer.compressedStorage->size);
+
+	gui::Color565 mainColor =  Window::LoadColorFromColorPalette(window.getColorPaletteIndex()).valueOr(ILI9341_BLACK);
 
 	if(const gui::ClearSettings* p_clearSettings = maybeClear.ptr_value()){
 		p_clearSettings->clearFn(p_clearSettings->position, windowSize);

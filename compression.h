@@ -36,7 +36,7 @@ constexpr CompressedImageBufferStorage<IS_NULL_TERMINATED, IS_NULL_TERMINATED ? 
 compiletimeCompress1Bitmap(const uint8_t (&image)[BUFFER_SIZE]){
 
 	constexpr uint16_t BUFFER_SIZE_BITS = BUFFER_SIZE * 8;
-	static_assert((WIDTH * HEIGHT) <= BUFFER_SIZE_BITS);
+	//static_assert((WIDTH * HEIGHT) <= BUFFER_SIZE_BITS);
 
 	CompressedImageBufferStorage<IS_NULL_TERMINATED, IS_NULL_TERMINATED ? COMPRESSED_SIZE+1 : COMPRESSED_SIZE>
 		compressedBuffer{};

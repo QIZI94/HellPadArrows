@@ -32,8 +32,10 @@ void initializationWatcher(const module::ManagedModule& module){
 
 
 void setup(){
+	#ifdef DEBUG
 	Serial.begin(115200);
 	Serial.println("------ Started -------");
+	#endif
 	module::ManagedModule::SetInitializationWatcherCallback(initializationWatcher);
 	module::ManagedModule::SetDefaultMaxInitializationAttemptsCount(50);
 }

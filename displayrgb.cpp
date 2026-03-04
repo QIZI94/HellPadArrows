@@ -439,7 +439,7 @@ static ScriptedAction  scriptedAnimations[]{
 			
 				return true;
 			}
-			uint8_t colorChange = 255 - radius;
+
 
 			/*static constexpr gui::Position circleOverlayPositions[] = {
 				{121, 206},
@@ -452,12 +452,12 @@ static ScriptedAction  scriptedAnimations[]{
 				tft.drawCircle(circlePos.x, circlePos.y - (radius / 2), radius, finalColor);
 			}*/
 
-			drawOptimizedExplosion({121, 206}, radius, 50);
+			drawOptimizedExplosion({121, 206}, radius++, 50);
 			
 			
 
 			//tft.drawCircle(111, 206 - (radius/2), radius, ILI9341_WHITE);
-			radius+=1;
+			
 			return false;
 			
 		}

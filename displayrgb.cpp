@@ -25,6 +25,70 @@ struct ArrowToImageMapping{
 	};
 };
 
+struct ScriptedAction{
+	using ScriptedFunction = bool(* const)();
+	enum class ActionType : uint8_t{
+		NONE,
+		WINDOW,
+		ANIMATION,
+		FUNCTION
+	};
+
+	constexpr ScriptedAction() : window(nullptr), actionType(ActionType::NONE) {}
+	constexpr ScriptedAction(gui::Window* window) : window(window), actionType(ActionType::WINDOW){}
+	constexpr ScriptedAction(gui::AnimatedMovement* animation) : animation(animation), actionType(ActionType::ANIMATION){}
+	constexpr ScriptedAction(const ScriptedFunction function) : function(function), actionType(ActionType::FUNCTION){}
+
+	union{
+		gui::Window* const window;
+		gui::AnimatedMovement* const animation;
+		const ScriptedFunction function;
+	};
+	const ActionType actionType;
+
+
+	bool run(){
+		switch (actionType){
+			case ScriptedAction::ActionType::WINDOW:
+				if(window->isHidden()){
+					window->setHidden(false);
+				}
+				return true;
+
+			case ScriptedAction::ActionType::ANIMATION:
+				
+		
+				if(animation->isDisabled()){
+					animation->setDisabled(false);
+					animation->window.setHidden(false);
+					animation->restart();
+				}
+				else if(animation->isFinished()){
+					//animation->window.setHidden(true);
+					animation->setDisabled(true);
+					return true;
+				}
+				
+				break;
+			case ScriptedAction::ActionType::FUNCTION:
+				return function();
+		
+			default:
+				break;
+		}
+		return false;
+	}
+	static constexpr ScriptedAction None() { return ScriptedAction(); }
+};
+
+
+struct SlowVerticalClearParams {
+	gui::Position position;
+	gui::Size size;
+};
+
+
+
 //constexpr gui::Color565 CLEAR_COLOR 					= gui::ConvertRGBtoRGB565(0,140,235);//ILI9341_DARKCYAN;
 //constexpr gui::Color565 GRIDLINE_COLOR					= gui::ConvertRGBtoRGB565(0,140,240);//ILI9341_NAVY;
 constexpr gui::Color565 CLEAR_COLOR 					= ILI9341_DARKCYAN;
@@ -198,90 +262,179 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 	),*/
 	
 	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_Eagle1Mid, uint8_t(ColorPalette::EAGLE1_COLOR)),
+		gui::Window(320, 72, DPS_Eagle1Mid, uint8_t(ColorPalette::EAGLE1_COLOR), true),
 		gui::Position{-20, 72},	gui::Position{320, 72},
 		10000,
-		false 
+		gui::AnimatedMovement::FinishBehavior::RUN_ONCE_AND_HIDE,
+		false
 	),
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{-20, 72+6},	gui::Position{60, 72+6},
 		2300,
-		false,
+		gui::AnimatedMovement::FinishBehavior::RUN_ONCE_AND_HIDE,
 		true
 	),
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
 		gui::Position{60, 72+6},	gui::Position{110+1, 200+6},
 		4000,
-		false,
+		gui::AnimatedMovement::FinishBehavior::RUN_ONCE_AND_HIDE,
 		true
 	),
+	
 
 // STARS
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{20,290},	gui::Position{10, 331},
 		1200,
-		true, false, true
+		gui::AnimatedMovement::FinishBehavior::REPEAT, false, true
 	),
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{50,290},	gui::Position{40, 331},
 		1500,
-		true, false, true
+		gui::AnimatedMovement::FinishBehavior::REPEAT, false, true
 	),
 
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{80,290},	gui::Position{70, 331},
 		2000,
-		true, false, true
+		gui::AnimatedMovement::FinishBehavior::REPEAT, false, true
 	),
 
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{115,292},	gui::Position{115, 331},
 		1700,
-		true, false, true
+		gui::AnimatedMovement::FinishBehavior::REPEAT, false, true
 	),
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{140,290},	gui::Position{170, 331},
 		1300,
-		true, false, true
+		gui::AnimatedMovement::FinishBehavior::REPEAT, false, true
 	),
 
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{170,290},	gui::Position{200, 331},
 		1900,
-		true, false, true
+		gui::AnimatedMovement::FinishBehavior::REPEAT, false, true
 	),
 
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_SmallStarOneBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
 		gui::Position{200,290},	gui::Position{230, 331},
 		2200,
-		true, false, true
+		gui::AnimatedMovement::FinishBehavior::REPEAT, false, true
 	),
-	gui::AnimatedMovement(
-		gui::Window(0, 0, DPS_FilledCircleBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR)),
-		gui::Position{-100, 72},	gui::Position{320, 72},
-		10000,
-		false 
-	),
+
 
 
 	
 };
 
-static gui::AnimatedMovement  *scriptedAnimations[]{
+//static TimedExecution10ms invertColorTimer;
+static StaticTimer10ms invertColorTimer;
+
+
+Option<SlowVerticalClearParams> requestedSlowClear;
+
+static void requestSlowClear(gui::Position position, gui::Size size){
+	requestedSlowClear = Some(
+		SlowVerticalClearParams{
+			.position = position,
+			.size = {.width = 240, .height = int16_t(position.y + size.height)}
+		}
+	);
+}
+
+
+static void drawSelectionBackgroundGrid();
+static void clearWithGrid(gui::Position pos, gui::Size size);
+static void disableStars(bool disable);
+static ScriptedAction  scriptedAnimations[]{
 	&lowPriorityAnimations[1],
-	&lowPriorityAnimations[2],	
+	&lowPriorityAnimations[2],
+	ScriptedAction(
+		[]() -> bool {
+			module::Display.wobble(30, 7);
+			invertColorTimer.reset(150);
+			return true;
+		}
+	),
+	ScriptedAction(
+		[]() -> bool {
+			static uint16_t radius = 1;
+			static bool runInvertedColorSwitching = true;
+			static uint8_t invertColorSwitchCount = 0;
+
+			if(runInvertedColorSwitching == true && invertColorTimer.isDown()){
+				uint8_t invert;
+				if(invertColorSwitchCount < 20){
+					invert = invertColorSwitchCount % 2;
+					
+					invertColorSwitchCount++;
+					invertColorTimer.reset(50);
+				}
+				else {
+					invertColorSwitchCount = 0;
+					runInvertedColorSwitching = false;
+					invert = 0;
+					module::Display.wobble(70, 5);
+					
+				}
+				tft.invertDisplay(invert);
+				delayMicroseconds(20);
+			}
+			
+			if(radius == 30){
+				module::Display.wobble(140, 5);
+			}
+			else if(radius > 50){
+				radius = 1;
+				tft.invertDisplay(0);
+
+				module::Display.wobble(1700, 5);
+				//disableStars(false);
+				
+				//clearWithGrid({.x = 0, .y = 70}, {.width = 240, .height = 178});
+				//drawSelectionBackgroundGrid();
+				//requestSlowClear({.x = 0, .y = 147}, {.width = 50, .height = 6});
+				
+				runInvertedColorSwitching = true;
+			
+				return true;
+			}
+			uint8_t colorChange = 255 - radius;
+
+			static constexpr gui::Position circleOverlayPositions[] = {
+				{121, 206},
+				{120, 206},
+				{120, 205},
+				{121, 205}
+			};
+
+			for(gui::Position circlePos : circleOverlayPositions){
+				tft.drawCircle(circlePos.x, circlePos.y - (radius / 2), radius, gui::lerpColor565(ILI9341_WHITE, ILI9341_ORANGE, 50, radius));
+			}
+			
+			
+
+			//tft.drawCircle(111, 206 - (radius/2), radius, ILI9341_WHITE);
+			radius+=1;
+			return false;
+			
+		}
+	),
+	ScriptedAction::None()
 };
 
-static gui::AnimatedMovement** currentScriptedAnimation = &scriptedAnimations[CONST_LENGTH(scriptedAnimations)];
+static ScriptedAction* currentScriptedAction = nullptr;
+
 
 
 static void clearWithDarkGrid(gui::Position pos, gui::Size size){
@@ -312,6 +465,61 @@ static void drawWindowBitPixelWithDarkGrid(const gui::Window& window, Option<gui
 	}
 	else {
 		gui::drawWindowBitPixel(tft, window, maybeOutline);
+	}
+}
+
+static void drawSelectionBackgroundGrid(){
+	constexpr gui::Position slotFramePosition = {.x = 19, .y = 85};
+	constexpr gui::Size slotFrameSize = {.width = 201, .height = 62};
+		
+	tft.fillRect(
+		slotFramePosition.x, slotFramePosition.y,
+		slotFrameSize.width, slotFrameSize.height,
+		ILI9341_YELLOW
+	);
+	//clearWithGrid({19+4, 85+4}, {201-9,62 - 9});
+	tft.drawRect(
+		slotFramePosition.x+3,slotFramePosition.y+3,
+		slotFrameSize.width-6,slotFrameSize.height-6,
+		ILI9341_BLACK
+	);
+	clearWithDarkGrid(
+		{slotFramePosition.x+4, slotFramePosition.y+4},
+		{slotFrameSize.width-10,slotFrameSize.height-10}
+	);
+
+
+	tft.fillRect(
+		TEXT_FRAME_POSITION.x, TEXT_FRAME_POSITION.y,
+		TEXT_FRAME_SIZE.width, TEXT_FRAME_SIZE.height,
+		ILI9341_YELLOW
+	);
+	//clearWithGrid({19+4, 85+4}, {201-9,62 - 9});
+	tft.drawRect(
+		TEXT_FRAME_POSITION.x+3,TEXT_FRAME_POSITION.y+3,
+		TEXT_FRAME_SIZE.width-6,TEXT_FRAME_SIZE.height-8,
+		ILI9341_DARKGREY
+	);
+	clearWithDarkGrid(
+		{TEXT_FRAME_POSITION.x+4, TEXT_FRAME_POSITION.y+4},
+		{TEXT_FRAME_SIZE.width-10,TEXT_FRAME_SIZE.height-10}
+	);
+}
+
+
+static void disableStars(bool disable){
+	for(gui::AnimatedMovement* p_star = &lowPriorityAnimations[3]; p_star != &lowPriorityAnimations[CONST_LENGTH(lowPriorityAnimations)]; ++p_star){
+		//p_star->setDisabled(disable);
+		
+		if(disable){
+			p_star->setRepeat(gui::AnimatedMovement::FinishBehavior::RUN_ONCE_AND_HIDE);
+			
+		}
+		else {
+			p_star->setRepeat(gui::AnimatedMovement::FinishBehavior::REPEAT);
+			p_star->restart();
+		}
+		//p_star->restart();
 	}
 }
 
@@ -519,7 +727,7 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	tft.setRotation(uint8_t(DisplayRGBModule::DEFAULT_ROTATION));
 	tft.setTextSize(1);
 	//tft.setScrollMargins(0, tft.height());
-	//tft.invertDisplay(0);
+	//tft.invertDisplay(1);
 	gui::Window::SetColorPaletteBuffer(colorPaletteBuf);
 	drawStaticContent();
 
@@ -583,7 +791,6 @@ void DisplayRGBModule::run(){
 }
 
 
-
 void DisplayRGBModule::drawStaticContent(){	
 	clearWithGrid(gui::Position{0, 0}, gui::Size{tft.width(), tft.height()});
 
@@ -598,43 +805,8 @@ void DisplayRGBModule::drawStaticContent(){
 	drawWindowBitPixel(logoWindow, Some(OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y - 10, screenWidth, 4);
 
-	constexpr gui::Position slotFramePosition = {.x = 19, .y = 85};
-	constexpr gui::Size slotFrameSize = {.width = 201, .height = 62};
 
-	
-	tft.fillRect(
-		slotFramePosition.x, slotFramePosition.y,
-		slotFrameSize.width, slotFrameSize.height,
-		ILI9341_YELLOW
-	);
-	//clearWithGrid({19+4, 85+4}, {201-9,62 - 9});
-	tft.drawRect(
-		slotFramePosition.x+3,slotFramePosition.y+3,
-		slotFrameSize.width-6,slotFrameSize.height-6,
-		ILI9341_BLACK
-	);
-	clearWithDarkGrid(
-		{slotFramePosition.x+4, slotFramePosition.y+4},
-		{slotFrameSize.width-10,slotFrameSize.height-10}
-	);
-
-
-	tft.fillRect(
-		TEXT_FRAME_POSITION.x, TEXT_FRAME_POSITION.y,
-		TEXT_FRAME_SIZE.width, TEXT_FRAME_SIZE.height,
-		ILI9341_YELLOW
-	);
-	//clearWithGrid({19+4, 85+4}, {201-9,62 - 9});
-	tft.drawRect(
-		TEXT_FRAME_POSITION.x+3,TEXT_FRAME_POSITION.y+3,
-		TEXT_FRAME_SIZE.width-6,TEXT_FRAME_SIZE.height-8,
-		ILI9341_DARKGREY
-	);
-	clearWithDarkGrid(
-		{TEXT_FRAME_POSITION.x+4, TEXT_FRAME_POSITION.y+4},
-		{TEXT_FRAME_SIZE.width-10,TEXT_FRAME_SIZE.height-10}
-	);
-	
+	drawSelectionBackgroundGrid();
 	//arrow placeholder
 
 /*
@@ -672,7 +844,7 @@ void DisplayRGBModule::drawStaticContent(){
 	
 }
 
-volatile char takeSpace[30];
+
 void DisplayRGBModule::drawDynamicContent() {
 	/*TimedExecution10ms** begin = TimedExecution10ms::List::getTimedExecutionListBegin();
 	if(*begin == nullptr){
@@ -691,6 +863,20 @@ void DisplayRGBModule::drawDynamicContent() {
 			return;
 		}
 	}*/
+	//if(currentScriptedAction != &scriptedAnimations[CONST_LENGTH(scriptedAnimations)]){
+	if(currentScriptedAction != nullptr){
+		if(currentScriptedAction->actionType == ScriptedAction::ActionType::NONE){
+			clearWithGrid({.x = 70, .y = 147}, {.width = 100, .height = 6});
+			drawSelectionBackgroundGrid();
+			currentScriptedAction = nullptr;
+		}
+		else if(currentScriptedAction->run()){
+			currentScriptedAction++;
+						
+		}
+	}
+	
+	
 
 	//if(mi_wobbleAmountY != 0){
 		uint16_t elapsedTime = millis() - mi_wobbleStartTime;
@@ -711,6 +897,15 @@ void DisplayRGBModule::drawDynamicContent() {
 	//}
 	
 	
+	if(SlowVerticalClearParams* p_verticalClearParams = requestedSlowClear.ptr_value()){
+		gui::Position& position = p_verticalClearParams->position;
+		const gui::Size& size = p_verticalClearParams->size;
+
+		clearWithGrid(position, {.width = size.width, .height = 1});
+		if(size.height < (++position.y)){
+			requestedSlowClear = None<SlowVerticalClearParams>();
+		}
+	}	
 
 
 	if(mb_redraw){
@@ -776,11 +971,18 @@ void DisplayRGBModule::drawDynamicContent() {
 		tft.setCursor(outcomeTextX, 73);
 		tft.setTextColor(mb_wasSuccessful ? ILI9341_GREEN : ILI9341_RED);
 		tft.println((const __FlashStringHelper*)ms_outcomeText);
-		if(ms_outcomeText != EMPTY_PROGMEM_STRING){
-			currentScriptedAnimation = &scriptedAnimations[0];
-			(*currentScriptedAnimation)->restart();
-			(*currentScriptedAnimation)->window.setHidden(false);
+
+		
+
+		if(ms_outcomeText != EMPTY_PROGMEM_STRING && mb_wasSuccessful){
+			requestSlowClear({.x = 0, .y = 70}, {.width = 240, .height = 178});
+			
+			currentScriptedAction = &scriptedAnimations[0];
+
+			
 			lowPriorityAnimations[0].restart();
+			lowPriorityAnimations[0].window.setHidden(false);
+			//disableStars(true);
 		}
 		mb_outcomeChanged = false;
 	}
@@ -825,22 +1027,7 @@ void DisplayRGBModule::drawDynamicContent() {
 		}
 		p_animation->window.updated();
 
-		if(currentScriptedAnimation != &scriptedAnimations[CONST_LENGTH(scriptedAnimations)]){
-			gui::AnimatedMovement* p_scriptedAnimationEntry = *currentScriptedAnimation;
-			
-			if(p_scriptedAnimationEntry->isDisabled()){
-				p_scriptedAnimationEntry->setDisabled(false);
-				p_scriptedAnimationEntry->window.setHidden(false);
-				p_scriptedAnimationEntry->restart();
-			}
-			else if(p_scriptedAnimationEntry->isFinished()){
-				p_scriptedAnimationEntry->window.setHidden(true);
-				p_scriptedAnimationEntry->setDisabled(true);
-				currentScriptedAnimation++;
-				
-			}
-			
-		}
+		
 
 		
 	}

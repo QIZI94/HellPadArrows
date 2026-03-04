@@ -76,13 +76,19 @@ Position AnimatedMovement::animateMovement(){
 		animState.mb_initialized = true;
 	}
 	else if(isFinished()){
-		if(isRepeated()){
-			
-			restart();
+		switch (FinishBehavior(animState.e_finishBehavior))
+		{
+			case FinishBehavior::REPEAT:
+				restart();
+				break;
+			case FinishBehavior::RUN_ONCE_AND_HIDE:
+				window.setHidden(true);
+			case FinishBehavior::RUN_ONCE:
+				return oldPosition;
+		
+
 		}
-		else {
-			return oldPosition;
-		}
+
 	}
 
 	uint16_t elapsedTime = millis() - mi_startTime;

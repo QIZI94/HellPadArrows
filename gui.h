@@ -227,27 +227,32 @@ private:
 
 class AnimatedMovement {
 public:
+	enum class FinishBehavior : uint8_t{
+		REPEAT,
+		RUN_ONCE_AND_HIDE,
+		RUN_ONCE		
+	};
 	struct AnimationState{
 		union{
 			struct{
 				bool mb_disabled : 1;
 				bool mb_mirroredY : 1;
-				bool mb_repeat : 1;
 				bool mb_fadeInOut : 1;
 				bool mb_initialized : 1;
+				uint8_t e_finishBehavior : 2;
 			};
 			uint8_t state;
 			
 		};
-		constexpr AnimationState(bool repeat, bool disabled, bool mirroredY, bool fadeInOut, bool initialized)
-		 : mb_disabled(disabled), mb_mirroredY(mirroredY), mb_repeat(repeat), mb_fadeInOut(fadeInOut), mb_initialized(initialized)
+		constexpr AnimationState(FinishBehavior finishBehavior, bool disabled, bool mirroredY, bool fadeInOut, bool initialized)
+		 : mb_disabled(disabled), mb_mirroredY(mirroredY), e_finishBehavior(uint8_t(finishBehavior)), mb_fadeInOut(fadeInOut), mb_initialized(initialized)
 		{}
 		constexpr AnimationState(uint8_t state) : state(state){}
 		
 		
 	};
-	constexpr AnimatedMovement(const Window& window, const Position& start, const Position& end, uint16_t duration, bool repeat = true, bool disabled = false, bool mirroredY = false, bool fadeInOut = true)
-	 : window(window), start(start), end(end), mi_duration(duration), mi_startTime(0), animState(AnimationState(repeat, disabled, mirroredY, fadeInOut, false)){
+	constexpr AnimatedMovement(const Window& window, const Position& start, const Position& end, uint16_t duration, FinishBehavior finishBehavior = FinishBehavior::REPEAT, bool disabled = false, bool mirroredY = false, bool fadeInOut = true)
+	 : window(window), start(start), end(end), mi_duration(duration), mi_startTime(0), animState(AnimationState(finishBehavior, disabled, mirroredY, fadeInOut, false)){
 
 	 }
 
@@ -273,8 +278,8 @@ public:
 		animState.mb_disabled = disabled;
 	}
 
-	void setRepeat(bool repeat){
-		animState.mb_repeat = repeat;
+	void setRepeat(FinishBehavior finishBehavior){
+		animState.e_finishBehavior = uint8_t(finishBehavior);
 	}
 
 	void setFadeInOut(bool fadeInOut){
@@ -303,8 +308,8 @@ public:
 		return animState.mb_disabled;
 	}
 
-	bool isRepeated() const {
-		return animState.mb_repeat;
+	FinishBehavior getFinishBehavior() const {
+		return FinishBehavior(animState.e_finishBehavior);
 	}
 
 	bool isFadeInOut() const {
@@ -351,6 +356,14 @@ struct ClearSettings {
 constexpr Color565 ConvertRGBtoRGB565(uint8_t r, uint8_t g, uint8_t b) {
     return (r << 11) | (g << 5) | b; 
 }
+
+/*constexpr Color565 ConvertRGBtoRGB565(uint8_t r, uint8_t g, uint8_t b) {
+    return static_cast<Color565>(
+        (((r * 31 + 127) / 255) << 11) |
+        (((g * 63 + 127) / 255) << 5)  |
+        ((b * 31 + 127) / 255)
+    );
+}*/
 
 constexpr uint8_t GetRedFromRGB565(Color565 color) {
     return (color >> 11) & 0x1F; 

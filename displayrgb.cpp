@@ -31,12 +31,15 @@ struct ScriptedAction{
 		NONE,
 		WINDOW,
 		ANIMATION,
+		ANIMATION_NON_BLOCKING,
 		FUNCTION
 	};
 
 	constexpr ScriptedAction() : window(nullptr), actionType(ActionType::NONE) {}
 	constexpr ScriptedAction(gui::Window* window) : window(window), actionType(ActionType::WINDOW){}
-	constexpr ScriptedAction(gui::AnimatedMovement* animation) : animation(animation), actionType(ActionType::ANIMATION){}
+	constexpr ScriptedAction(gui::AnimatedMovement* animation, bool nonBlocking = false)
+		: animation(animation), actionType(nonBlocking ? ActionType::ANIMATION_NON_BLOCKING : ActionType::ANIMATION){}
+
 	constexpr ScriptedAction(const ScriptedFunction function) : function(function), actionType(ActionType::FUNCTION){}
 
 	union{
@@ -54,7 +57,7 @@ struct ScriptedAction{
 					window->setHidden(false);
 				}
 				return true;
-
+			
 			case ScriptedAction::ActionType::ANIMATION:
 				
 		
@@ -70,6 +73,11 @@ struct ScriptedAction{
 				}
 				
 				break;
+			case ScriptedAction::ActionType::ANIMATION_NON_BLOCKING:
+				animation->setDisabled(false);
+				animation->window.setHidden(false);
+				animation->restart();
+				return true;
 			case ScriptedAction::ActionType::FUNCTION:
 				return function();
 		
@@ -87,6 +95,9 @@ struct SlowVerticalClearParams {
 	gui::Size size;
 };
 
+struct ProgressiveWobbleParams {
+	
+};
 
 
 //constexpr gui::Color565 CLEAR_COLOR 					= gui::ConvertRGBtoRGB565(0,140,235);//ILI9341_DARKCYAN;
@@ -342,14 +353,32 @@ static StaticTimer10ms invertColorTimer;
 
 
 Option<SlowVerticalClearParams> requestedSlowClear;
+static StaticTimer10ms delayScriptedAnimationTimer;
 
 static void requestSlowClear(gui::Position position, gui::Size size){
 	requestedSlowClear = Some(
 		SlowVerticalClearParams{
 			.position = position,
-			.size = {.width = 240, .height = int16_t(position.y + size.height)}
+			.size = {.width = size.width, .height = int16_t(position.y + size.height)}
 		}
 	);
+}
+
+
+static void drawOptimizedExplosion(gui::Position position, uint8_t radius, uint8_t maxRadius){
+	static constexpr gui::Position circleOverlayPositions[] = {
+				{0, 0},
+				{1, 0},
+				{1, 1},
+				{0, 1}
+	};
+
+	gui::Color565 finalColor = gui::lerpColor565(ILI9341_WHITE, ILI9341_ORANGE, maxRadius, radius);
+
+	for(gui::Position circlePos : circleOverlayPositions){
+
+		tft.drawCircle(position.x - circlePos.x, position.y - circlePos.y - (radius / 2), radius, finalColor);
+	}
 }
 
 
@@ -357,6 +386,7 @@ static void drawSelectionBackgroundGrid();
 static void clearWithGrid(gui::Position pos, gui::Size size);
 static void disableStars(bool disable);
 static ScriptedAction  scriptedAnimations[]{
+	ScriptedAction(&lowPriorityAnimations[0], true),
 	&lowPriorityAnimations[1],
 	&lowPriorityAnimations[2],
 	ScriptedAction(
@@ -368,7 +398,7 @@ static ScriptedAction  scriptedAnimations[]{
 	),
 	ScriptedAction(
 		[]() -> bool {
-			static uint16_t radius = 1;
+			static uint8_t radius = 1;
 			static bool runInvertedColorSwitching = true;
 			static uint8_t invertColorSwitchCount = 0;
 
@@ -411,16 +441,18 @@ static ScriptedAction  scriptedAnimations[]{
 			}
 			uint8_t colorChange = 255 - radius;
 
-			static constexpr gui::Position circleOverlayPositions[] = {
+			/*static constexpr gui::Position circleOverlayPositions[] = {
 				{121, 206},
 				{120, 206},
 				{120, 205},
 				{121, 205}
 			};
-
+			gui::Color565 finalColor = gui::lerpColor565(ILI9341_WHITE, ILI9341_ORANGE, 50, radius);
 			for(gui::Position circlePos : circleOverlayPositions){
-				tft.drawCircle(circlePos.x, circlePos.y - (radius / 2), radius, gui::lerpColor565(ILI9341_WHITE, ILI9341_ORANGE, 50, radius));
-			}
+				tft.drawCircle(circlePos.x, circlePos.y - (radius / 2), radius, finalColor);
+			}*/
+
+			drawOptimizedExplosion({121, 206}, radius, 50);
 			
 			
 
@@ -686,6 +718,8 @@ void DisplayRGBModule::reset() {
 
 	wobble(1700, 5);
 
+	mb_wasSuccessful = false;
+
 	update();
 }
 
@@ -864,21 +898,32 @@ void DisplayRGBModule::drawDynamicContent() {
 		}
 	}*/
 	//if(currentScriptedAction != &scriptedAnimations[CONST_LENGTH(scriptedAnimations)]){
-	if(currentScriptedAction != nullptr){
-		if(currentScriptedAction->actionType == ScriptedAction::ActionType::NONE){
+	static bool b_secondTime = false;
+	if(currentScriptedAction != nullptr && delayScriptedAnimationTimer.isDown()){
+
+		if(b_secondTime == false){
+			delayScriptedAnimationTimer.reset(2500);
+			b_secondTime = true;
+		}
+		else if(currentScriptedAction->actionType == ScriptedAction::ActionType::NONE){
 			clearWithGrid({.x = 70, .y = 147}, {.width = 100, .height = 6});
 			drawSelectionBackgroundGrid();
 			currentScriptedAction = nullptr;
+			b_secondTime = false;
 		}
 		else if(currentScriptedAction->run()){
 			currentScriptedAction++;
 						
 		}
+		
+		
+		
 	}
 	
 	
 
 	//if(mi_wobbleAmountY != 0){
+	
 		uint16_t elapsedTime = millis() - mi_wobbleStartTime;
 		
 		int16_t newPosition = gui::lerp(mi_wobbleStart, mi_wobbleStop, mi_wobbleTargetTime, elapsedTime);
@@ -945,23 +990,24 @@ void DisplayRGBModule::drawDynamicContent() {
 
 			mb_textChanged = false;
 		}
+		if(currentScriptedAction == nullptr){
+			for(auto& suggestionArrowsEntry : arrowArrayWindowSlots){
+				Option<gui::Color565> maybeOutline;
+				if(&suggestionArrowsEntry == &arrowArrayWindowSlots[MAIN_ARROWS_IDX]){
+					maybeOutline = Some(OUTLINE_COLOR);
+				}
+				for(gui::Window& suggestionArrow : suggestionArrowsEntry){
+					
+					drawWindowBitPixelWithDarkGrid(suggestionArrow, maybeOutline, suggestionArrow.getPosition());
+					suggestionArrow.updated();
+				}
+			}
+			drawWindowBitPixelWithDarkGrid(slotUpperSelection, Some(SELECTOR_OUTLINE_COLOR), Some(selectedUpperSlotPreviousPosition));
+			slotUpperSelection.updated();
 
-		for(auto& suggestionArrowsEntry : arrowArrayWindowSlots){
-			Option<gui::Color565> maybeOutline;
-			if(&suggestionArrowsEntry == &arrowArrayWindowSlots[MAIN_ARROWS_IDX]){
-				maybeOutline = Some(OUTLINE_COLOR);
-			}
-			for(gui::Window& suggestionArrow : suggestionArrowsEntry){
-				
-				drawWindowBitPixelWithDarkGrid(suggestionArrow, maybeOutline, suggestionArrow.getPosition());
-				suggestionArrow.updated();
-			}
+			drawWindowBitPixelWithDarkGrid(slotLowerSelection, Some(SELECTOR_OUTLINE_COLOR), Some(selectedLowerSlotPreviousPosition));
+			slotLowerSelection.updated();
 		}
-		drawWindowBitPixelWithDarkGrid(slotUpperSelection, Some(SELECTOR_OUTLINE_COLOR), Some(selectedUpperSlotPreviousPosition));
-		slotUpperSelection.updated();
-
-		drawWindowBitPixelWithDarkGrid(slotLowerSelection, Some(SELECTOR_OUTLINE_COLOR), Some(selectedLowerSlotPreviousPosition));
-		slotLowerSelection.updated();
 
 		mb_redraw = false;
 	}
@@ -975,15 +1021,17 @@ void DisplayRGBModule::drawDynamicContent() {
 		
 
 		if(ms_outcomeText != EMPTY_PROGMEM_STRING && mb_wasSuccessful){
-			requestSlowClear({.x = 0, .y = 70}, {.width = 240, .height = 178});
+			requestSlowClear({.x = 0, .y = 85}, {.width = 220, .height = 147});
 			
 			currentScriptedAction = &scriptedAnimations[0];
-
+			delayScriptedAnimationTimer.reset(2000);
+			//delay(100);
 			
-			lowPriorityAnimations[0].restart();
-			lowPriorityAnimations[0].window.setHidden(false);
+			//lowPriorityAnimations[0].restart();
+			//lowPriorityAnimations[0].window.setHidden(false);
 			//disableStars(true);
 		}
+
 		mb_outcomeChanged = false;
 	}
 	// IDLE

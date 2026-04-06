@@ -25,10 +25,32 @@ struct ArrowToImageMapping{
 	};
 };
 
+static StaticTimer10ms delayScriptedAnimationTimer;
+
+struct ScriptedDelay{
+	uint16_t delayFor;
+	constexpr ScriptedDelay(uint16_t delay) : delayFor(delay) {};
+
+
+	bool runDelay() const {
+		if(!delayScriptedAnimationTimer.isEnabled()){
+			delayScriptedAnimationTimer.enable();
+			delayScriptedAnimationTimer.reset(delayFor);
+		}
+		else if(delayScriptedAnimationTimer.isDown()) {
+			delayScriptedAnimationTimer.disable();
+			return true;
+		}
+
+		return false;
+	}
+};
+
 struct ScriptedAction{
 	using ScriptedFunction = bool(* const)();
 	enum class ActionType : uint8_t{
 		NONE,
+		DELAY,
 		WINDOW,
 		ANIMATION,
 		ANIMATION_NON_BLOCKING,
@@ -36,13 +58,14 @@ struct ScriptedAction{
 	};
 
 	constexpr ScriptedAction() : window(nullptr), actionType(ActionType::NONE) {}
+	constexpr ScriptedAction(ScriptedDelay scriptedDelay) : scriptedDelay(scriptedDelay), actionType(ActionType::DELAY){}
 	constexpr ScriptedAction(gui::Window* window) : window(window), actionType(ActionType::WINDOW){}
 	constexpr ScriptedAction(gui::AnimatedMovement* animation, bool nonBlocking = false)
 		: animation(animation), actionType(nonBlocking ? ActionType::ANIMATION_NON_BLOCKING : ActionType::ANIMATION){}
-
 	constexpr ScriptedAction(const ScriptedFunction function) : function(function), actionType(ActionType::FUNCTION){}
 
 	union{
+		ScriptedDelay scriptedDelay;
 		gui::Window* const window;
 		gui::AnimatedMovement* const animation;
 		const ScriptedFunction function;
@@ -52,6 +75,8 @@ struct ScriptedAction{
 
 	bool run(){
 		switch (actionType){
+			case ScriptedAction::ActionType::DELAY:
+				return scriptedDelay.runDelay();
 			case ScriptedAction::ActionType::WINDOW:
 				if(window->isHidden()){
 					window->setHidden(false);
@@ -78,6 +103,7 @@ struct ScriptedAction{
 				animation->window.setHidden(false);
 				animation->restart();
 				return true;
+
 			case ScriptedAction::ActionType::FUNCTION:
 				return function();
 		
@@ -95,9 +121,38 @@ struct SlowVerticalClearParams {
 	gui::Size size;
 };
 
-struct ProgressiveWobbleParams {
-	
+struct WobbleParams {
+	uint16_t mi_wobbleStartTime = 0;
+	uint16_t mi_wobbleTargetTime = 1700;
+	int8_t mi_wobbleStart = 0;
+	int8_t mi_wobbleStop = 5;
 };
+struct ProgressiveWobbleParams {
+	uint16_t startWobbleTimeAmount;
+	uint16_t endWobbleTimeAmount;
+	uint16_t targetTime;
+	uint16_t startTime;
+	uint16_t previousWobbleTime;
+	int8_t previousWobbleAmount;
+};
+
+
+struct FlashParams {
+	uint16_t switchTime;
+	uint8_t moduloCounter;
+};
+
+struct ExplosionParams {
+	gui::Position8Bit position;
+	uint8_t currentRadius;
+	uint8_t targetRadius;
+
+	gui::Color565 computeColor() const {
+		return gui::lerpColor565(ILI9341_WHITE, ILI9341_ORANGE, targetRadius, currentRadius);
+	}
+};
+
+
 
 
 //constexpr gui::Color565 CLEAR_COLOR 					= gui::ConvertRGBtoRGB565(0,140,235);//ILI9341_DARKCYAN;
@@ -166,6 +221,7 @@ static Adafruit_ILI9341 tft(
 static uint32_t frameStartTime = 0;
 static uint32_t averageFPS = 0;
 static uint32_t averageSamples = 300;
+static uint8_t targetWobbleAmount = 5;	
 
 
 
@@ -349,11 +405,28 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 };
 
 //static TimedExecution10ms invertColorTimer;
-static StaticTimer10ms invertColorTimer;
 
+
+WobbleParams wobbleParams;
 
 Option<SlowVerticalClearParams> requestedSlowClear;
-static StaticTimer10ms delayScriptedAnimationTimer;
+Option<ProgressiveWobbleParams> requestedProgressiveWobble;
+Option<FlashParams> requestedScreenFlashing;
+//Option<ExplosionParams> requestedExplosion;
+
+Option<ExplosionParams> requestedExplosions[4];
+
+static StaticTimer10ms screenFlashTimer;
+
+
+
+
+static void setupWobble(uint16_t timeToWobble, uint8_t amountOfWobble){
+	wobbleParams.mi_wobbleTargetTime = timeToWobble;
+	wobbleParams.mi_wobbleStart = 0;
+	wobbleParams.mi_wobbleStop = amountOfWobble;
+	wobbleParams.mi_wobbleStartTime = millis();
+}
 
 static void requestSlowClear(gui::Position position, gui::Size size){
 	requestedSlowClear = Some(
@@ -364,104 +437,166 @@ static void requestSlowClear(gui::Position position, gui::Size size){
 	);
 }
 
+static void requestProgressiveWobble(uint8_t amount, uint16_t startWobbleTime, uint16_t endWobbleTime, uint16_t duration){
+	//mi_wobbleStart = amount; // last time here
+	requestedProgressiveWobble = Some(
+		ProgressiveWobbleParams{
+			.startWobbleTimeAmount = startWobbleTime,
+			.endWobbleTimeAmount = endWobbleTime,
+			.targetTime = duration,
+			.startTime = uint16_t(millis()),
+			.previousWobbleTime = wobbleParams.mi_wobbleTargetTime,
+			.previousWobbleAmount = wobbleParams.mi_wobbleStop > wobbleParams.mi_wobbleStart ? wobbleParams.mi_wobbleStop : wobbleParams.mi_wobbleStart
+		}
+	);
+	module::Display.wobble(startWobbleTime, amount);
 
-static void drawOptimizedExplosion(gui::Position position, uint8_t radius, uint8_t maxRadius){
-	static constexpr gui::Position circleOverlayPositions[] = {
-				{0, 0},
-				{1, 0},
-				{1, 1},
-				{0, 1}
-	};
+}
 
-	gui::Color565 finalColor = gui::lerpColor565(ILI9341_WHITE, ILI9341_ORANGE, maxRadius, radius);
+void requestScreenFlashing(uint16_t switchTime, uint8_t flashAmount, uint16_t delayFlashing = 0){
+	if(switchTime == 0 || flashAmount == 0){
+		delayFlashing = 0;
+		requestedScreenFlashing = None<FlashParams>();
+	}
+	else {
+		requestedScreenFlashing = Some(
+			FlashParams{
+				.switchTime = switchTime,
+				.moduloCounter = uint8_t(flashAmount * 2 + 1)
+			}
+		);
+	}
+	screenFlashTimer.reset(delayFlashing);
 
-	for(gui::Position circlePos : circleOverlayPositions){
+}
 
-		tft.drawCircle(position.x - circlePos.x, position.y - circlePos.y - (radius / 2), radius, finalColor);
+struct ExplosionInput{
+	gui::Position8Bit position;
+	uint8_t radius;
+};
+
+void requestExplosion(gui::Position8Bit position, uint8_t radius, uint8_t slot){
+	requestedExplosions[slot] = Some(
+		ExplosionParams{
+			.position = position,
+			.currentRadius = 0,
+			.targetRadius = radius
+		}
+		
+	);
+}
+
+void requestExplosions(const ExplosionInput inputParamsList[], uint8_t inputParamsCount){
+	for(uint8_t slot = 0; slot < inputParamsCount; ++slot){
+		requestExplosion(inputParamsList[slot].position, inputParamsList[slot].radius, slot);
+		/*requestedExplosions[slot] = Some(
+			ExplosionParams{
+				.position = inputParamsList[slot].position,
+				.currentRadius = 0,
+				.targetRadius = inputParamsList[slot].radius
+			}
+			
+		);*/
 	}
 }
 
 
-static void drawSelectionBackgroundGrid();
-static void clearWithGrid(gui::Position pos, gui::Size size);
-static void disableStars(bool disable);
+void drawOptimizedExplosion(const ExplosionParams& p_explosionParams){
+	
+	uint16_t finalColor = p_explosionParams.computeColor();
+	uint8_t circleOverlayPositionsMask = 0b01111000;
+	
+	//for(const gui::Position& circleOffsets : circleOverlayPositions){
+	while(circleOverlayPositionsMask){
+		gui::Position circleOffsets {
+			.x = circleOverlayPositionsMask & 0x02,
+			.y = circleOverlayPositionsMask & 0x01
+		};
+		circleOverlayPositionsMask>>=2;
+		int16_t ddF_x = 1;
+		int16_t x = 0;
+		int16_t y = p_explosionParams.currentRadius;
+		int16_t f = -p_explosionParams.currentRadius;
+		int16_t ddF_y = -2 * p_explosionParams.currentRadius;
+		uint8_t halfRadius = (p_explosionParams.currentRadius >> 1);
+		
+		tft.startWrite();
+
+		while (x < y) {
+			if (f >= 0) {
+				y--;
+				ddF_y += 2;
+				f += ddF_y;
+			}
+			x++;
+			ddF_x += 2;
+			f += ddF_x;
+			
+			uint8_t yPolaritiesMask = 0b11001100;
+			
+
+			for(uint8_t idx = 0; idx < 8; ++idx){
+				const uint8_t xPolarity = idx % 2;
+				gui::Position offset = idx > 3 ? gui::Position{y,x} : gui::Position{x,y};
+				
+				offset.x = xPolarity ? -offset.x : offset.x;
+				offset.y =  yPolaritiesMask & 0x01 ? -offset.y : offset.y;
+				yPolaritiesMask>>=1;
+				tft.writePixel(p_explosionParams.position.x - circleOffsets.x - offset.x, p_explosionParams.position.y - circleOffsets.y - offset.y  - halfRadius, finalColor);
+				
+			}
+
+
+		}
+		tft.endWrite();
+		
+	}
+	
+}
+
+static bool startShakingAndScreenFlashing(){
+	requestProgressiveWobble(40, 50, 100, 1800);
+	requestScreenFlashing(50, 17, 150);
+	return true;
+}
+
+static bool waitTillExplosionsFinish(){
+	for(const Option<ExplosionParams> requestedExplosion : requestedExplosions){
+		if(requestedExplosion.hasValue()){
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+
 static ScriptedAction  scriptedAnimations[]{
+	ScriptedDelay(2000),
+	ScriptedDelay(2500),
 	ScriptedAction(&lowPriorityAnimations[0], true),
 	&lowPriorityAnimations[1],
 	&lowPriorityAnimations[2],
+	startShakingAndScreenFlashing,
 	ScriptedAction(
 		[]() -> bool {
-			module::Display.wobble(30, 7);
-			invertColorTimer.reset(150);
+			
+			requestExplosion({121, 206}, 50, 0);
+	
 			return true;
 		}
 	),
+	ScriptedDelay(1670),
 	ScriptedAction(
 		[]() -> bool {
-			static uint8_t radius = 1;
-			static bool runInvertedColorSwitching = true;
-			static uint8_t invertColorSwitchCount = 0;
 
-			if(runInvertedColorSwitching == true && invertColorTimer.isDown()){
-				uint8_t invert;
-				if(invertColorSwitchCount < 20){
-					invert = invertColorSwitchCount % 2;
-					
-					invertColorSwitchCount++;
-					invertColorTimer.reset(50);
-				}
-				else {
-					invertColorSwitchCount = 0;
-					runInvertedColorSwitching = false;
-					invert = 0;
-					module::Display.wobble(70, 5);
-					
-				}
-				tft.invertDisplay(invert);
-				delayMicroseconds(20);
-			}
+			requestExplosion({150, 220}, 20, 1);
+			requestExplosion({90, 220}, 20, 2);
 			
-			if(radius == 30){
-				module::Display.wobble(140, 5);
-			}
-			else if(radius > 50){
-				radius = 1;
-				tft.invertDisplay(0);
-
-				module::Display.wobble(1700, 5);
-				//disableStars(false);
-				
-				//clearWithGrid({.x = 0, .y = 70}, {.width = 240, .height = 178});
-				//drawSelectionBackgroundGrid();
-				//requestSlowClear({.x = 0, .y = 147}, {.width = 50, .height = 6});
-				
-				runInvertedColorSwitching = true;
-			
-				return true;
-			}
-
-
-			/*static constexpr gui::Position circleOverlayPositions[] = {
-				{121, 206},
-				{120, 206},
-				{120, 205},
-				{121, 205}
-			};
-			gui::Color565 finalColor = gui::lerpColor565(ILI9341_WHITE, ILI9341_ORANGE, 50, radius);
-			for(gui::Position circlePos : circleOverlayPositions){
-				tft.drawCircle(circlePos.x, circlePos.y - (radius / 2), radius, finalColor);
-			}*/
-
-			drawOptimizedExplosion({121, 206}, radius++, 50);
-			
-			
-
-			//tft.drawCircle(111, 206 - (radius/2), radius, ILI9341_WHITE);
-			
-			return false;
-			
+			return true;
 		}
 	),
+	waitTillExplosionsFinish,
 	ScriptedAction::None()
 };
 
@@ -538,22 +673,6 @@ static void drawSelectionBackgroundGrid(){
 	);
 }
 
-
-static void disableStars(bool disable){
-	for(gui::AnimatedMovement* p_star = &lowPriorityAnimations[3]; p_star != &lowPriorityAnimations[CONST_LENGTH(lowPriorityAnimations)]; ++p_star){
-		//p_star->setDisabled(disable);
-		
-		if(disable){
-			p_star->setRepeat(gui::AnimatedMovement::FinishBehavior::RUN_ONCE_AND_HIDE);
-			
-		}
-		else {
-			p_star->setRepeat(gui::AnimatedMovement::FinishBehavior::REPEAT);
-			p_star->restart();
-		}
-		//p_star->restart();
-	}
-}
 
 
 namespace module{ // display
@@ -727,11 +846,8 @@ void DisplayRGBModule::update(){
 	mb_redraw = true;
 }
 
-void DisplayRGBModule::wobble(uint16_t timeToWobble, uint16_t amountOfWobble){
-	mi_wobbleTargetTime = timeToWobble;
-	mi_wobbleStart = 0;
-	mi_wobbleStop = amountOfWobble;
-	mi_wobbleStartTime = millis();
+void DisplayRGBModule::wobble(uint16_t timeToWobble, uint8_t amountOfWobble){
+	setupWobble(timeToWobble, amountOfWobble);
 }
 
 
@@ -739,11 +855,9 @@ uint8_t DisplayRGBModule::getTargetFPS() const {
 	return 1000/mi_targetFpsDeltaMs;
 }
 
-int16_t i = 0;
-
-
 
 DisplayRGBModule::InitializationState DisplayRGBModule::init(){
+	delayScriptedAnimationTimer.disable();
 	//pinMode(Pinout::Assignment::TFT_CS, OUTPUT);
 	//digitalWrite(Pinout::Assignment::TFT_CS	, HIGH); 
 	tft.begin();
@@ -898,18 +1012,14 @@ void DisplayRGBModule::drawDynamicContent() {
 		}
 	}*/
 	//if(currentScriptedAction != &scriptedAnimations[CONST_LENGTH(scriptedAnimations)]){
-	static bool b_secondTime = false;
-	if(currentScriptedAction != nullptr && delayScriptedAnimationTimer.isDown()){
+	
+	if(currentScriptedAction != nullptr){
 
-		if(b_secondTime == false){
-			delayScriptedAnimationTimer.reset(2500);
-			b_secondTime = true;
-		}
-		else if(currentScriptedAction->actionType == ScriptedAction::ActionType::NONE){
+		
+		if(currentScriptedAction->actionType == ScriptedAction::ActionType::NONE){
 			clearWithGrid({.x = 70, .y = 147}, {.width = 100, .height = 6});
 			drawSelectionBackgroundGrid();
 			currentScriptedAction = nullptr;
-			b_secondTime = false;
 		}
 		else if(currentScriptedAction->run()){
 			currentScriptedAction++;
@@ -923,22 +1033,44 @@ void DisplayRGBModule::drawDynamicContent() {
 	
 
 	//if(mi_wobbleAmountY != 0){
-	
-		uint16_t elapsedTime = millis() - mi_wobbleStartTime;
-		
-		int16_t newPosition = gui::lerp(mi_wobbleStart, mi_wobbleStop, mi_wobbleTargetTime, elapsedTime);
-		
+	uint16_t timeNow = millis();
 
-		//Serial.println(newPosition);
-		tft.scrollTo(newPosition);
-		//delay(1000);
-		if(elapsedTime > mi_wobbleTargetTime){
-			int16_t tmp = mi_wobbleStop;
-			mi_wobbleStop = mi_wobbleStart;
-			mi_wobbleStart = tmp;
-			mi_wobbleStartTime = millis();
+	
+	uint16_t elapsedTime = timeNow - wobbleParams.mi_wobbleStartTime;
+	int16_t newPosition = gui::lerp(wobbleParams.mi_wobbleStart, wobbleParams.mi_wobbleStop, wobbleParams.mi_wobbleTargetTime, elapsedTime);
+	
+
+	//Serial.println(newPosition);
+	tft.scrollTo(newPosition);
+	//delay(1000);
+	if(elapsedTime > wobbleParams.mi_wobbleTargetTime){
+		if(ProgressiveWobbleParams* p_progressiveWobble = requestedProgressiveWobble.ptr_value()){
+			uint16_t elapsedTime = timeNow - p_progressiveWobble->startTime;
 			
+			//wobble(
+			wobbleParams.mi_wobbleTargetTime = gui::lerp(
+				p_progressiveWobble->startWobbleTimeAmount,
+				p_progressiveWobble->endWobbleTimeAmount,
+				p_progressiveWobble->targetTime,
+				elapsedTime
+			);
+
+
+			//	mi_wobbleStop
+				
+			//);
+			if(elapsedTime > p_progressiveWobble->targetTime){
+				wobble(p_progressiveWobble->previousWobbleTime, p_progressiveWobble->previousWobbleAmount);
+				//mi_wobbleStop = 0;
+				requestedProgressiveWobble = None<ProgressiveWobbleParams>();
+			}
 		}
+		int16_t tmp = wobbleParams.mi_wobbleStop;
+		wobbleParams.mi_wobbleStop = wobbleParams.mi_wobbleStart;
+		wobbleParams.mi_wobbleStart = tmp;
+		wobbleParams.mi_wobbleStartTime = millis();
+		
+	}
 	//}
 	
 	
@@ -950,7 +1082,35 @@ void DisplayRGBModule::drawDynamicContent() {
 		if(size.height < (++position.y)){
 			requestedSlowClear = None<SlowVerticalClearParams>();
 		}
-	}	
+	}
+
+	if(FlashParams* p_flashParams = requestedScreenFlashing.ptr_value()){
+		if(screenFlashTimer.isDown()){
+			uint8_t invert;
+			if(p_flashParams->moduloCounter == 0){
+				requestedScreenFlashing = None<FlashParams>();
+				invert = 0;
+			}
+			else {
+				invert = p_flashParams->moduloCounter % 2;
+				p_flashParams->moduloCounter--;
+				screenFlashTimer.reset(p_flashParams->switchTime);
+			}
+			tft.invertDisplay(invert);
+		}
+	}
+	for(Option<ExplosionParams>& requestedExplosion : requestedExplosions){
+		if(ExplosionParams* p_explosionParams = requestedExplosion.ptr_value()){
+			//gui::drawOptimizedCircle(tft, p_explosionParams->position, p_explosionParams->currentRadius, ILI9341_WHITE);//drawOptimizedExplosion(p_explosionParams->position, p_explosionParams->currentRadius, p_explosionParams->targetRadius);
+			drawOptimizedExplosion(*p_explosionParams);
+			if(p_explosionParams->currentRadius == p_explosionParams->targetRadius){
+				requestedExplosion = None<ExplosionParams>();
+			}
+			else {
+				p_explosionParams->currentRadius++;
+			}
+		}
+	}
 
 
 	if(mb_redraw){
@@ -1024,7 +1184,7 @@ void DisplayRGBModule::drawDynamicContent() {
 			requestSlowClear({.x = 0, .y = 85}, {.width = 220, .height = 147});
 			
 			currentScriptedAction = &scriptedAnimations[0];
-			delayScriptedAnimationTimer.reset(2000);
+
 			//delay(100);
 			
 			//lowPriorityAnimations[0].restart();

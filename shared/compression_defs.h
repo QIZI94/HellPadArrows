@@ -3,8 +3,8 @@
 #include <inttypes.h>
 namespace compression{
 struct Size {
-	int16_t width;
-	int16_t height;
+	uint8_t width;
+	uint8_t height;
 
 	bool operator ==(const Size& other){
 		return width == other.width && height == other.height;

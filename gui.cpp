@@ -54,6 +54,11 @@ Position Position::lerpTo(const Position& to, uint16_t durationMs, uint16_t elap
 	return lerp(*this, to, durationMs, elapsedTtimeMs);
 }
 
+
+Position8Bit Position8Bit::lerpTo(const Position8Bit &to, uint16_t durationMs, uint16_t elapsedTtimeMs) const {
+	return Position8Bit::from(lerp(*this, to, durationMs, elapsedTtimeMs));
+}
+
 Option<Color565> Window::LoadColorFromColorPalette(uint8_t colorPaletteIndex){
 	const Color565* colorPaletteBuffer = *GetColorPaletteBuffer();
 	if(colorPaletteBuffer != nullptr){
@@ -111,13 +116,13 @@ void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, Option
 		return;
 	}
 
-	gui::Size windowSize;
+	compression::Size windowSize;
 	PROGMEM_READ_STRUCTURE(&windowSize, &imageBuffer.compressedStorage->size);
 
 	gui::Color565 mainColor =  Window::LoadColorFromColorPalette(window.getColorPaletteIndex()).valueOr(ILI9341_BLACK);
 
 	if(const gui::ClearSettings* p_clearSettings = maybeClear.ptr_value()){
-		p_clearSettings->clearFn(p_clearSettings->position, windowSize);
+		p_clearSettings->clearFn(p_clearSettings->position, gui::Size{.width = windowSize.width, .height = windowSize.height});
 	}
 	if(!window.isHidden()){
 		Color565 outlineColor = maybeOutlineColor.valueOr(mainColor);

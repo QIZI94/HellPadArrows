@@ -28,6 +28,31 @@ struct Position {
 
 };
 
+struct Position8Bit{
+	uint8_t x;
+	uint8_t y;
+
+	operator Position() const {
+		return Position{.x = int16_t(x), .y = int16_t(y)};
+	}
+
+	bool operator ==(const Position8Bit& other) const {
+		return x == other.x && y == other.y;
+	}
+	bool operator !=(const Position8Bit& other) const {
+		return x != other.x || y != other.y;
+	}
+
+	Position8Bit lerpTo(const Position8Bit& to, uint16_t durationMs, uint16_t elapsedTtimeMs) const;
+
+	static Position8Bit from(const Position& position){
+		return Position8Bit{
+			.x = uint8_t(position.x),
+			.y = uint8_t(position.y)
+		};
+	}
+};
+
 struct Size {
 	int16_t width;
 	int16_t height;
@@ -38,6 +63,22 @@ struct Size {
 	bool operator !=(const Size& other){
 		return width != other.width || height != other.height;
 	}
+};
+
+struct Size8Bit {
+	int8_t width;
+	int8_t height;
+
+	operator Size() const {
+		return Size{.width = int16_t(width), .height = int16_t(height)};
+	}
+	bool operator ==(const Size& other){
+		return width == other.width && height == other.height;
+	}
+	bool operator !=(const Size& other){
+		return width != other.width || height != other.height;
+	}
+
 };
 
 /*

@@ -27,7 +27,7 @@ namespace compression{
 			compressedIt++;
 			currentCompressedByte = CompressedByte::from(pgm_read_byte(compressedIt));
         }
-        return None<uint8_t>();
+        return None;
 
 	}
 	
@@ -61,7 +61,7 @@ namespace compression{
 			compressedIt++;
 			currentCompressedByte = CompressedByte::from(pgm_read_byte(compressedIt));
         }
-        return None<uint8_t>();
+        return None;
 
 	}
 
@@ -90,7 +90,7 @@ namespace compression{
 			compressedIt++;
 			currentCompressedByte = CompressedByte::from(pgm_read_byte(compressedIt));
         }
-        return None<uint8_t>();
+        return None;
 	}
 	
 } // namespace compression

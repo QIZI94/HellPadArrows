@@ -66,7 +66,7 @@ Option<Color565> Window::LoadColorFromColorPalette(uint8_t colorPaletteIndex){
 		PROGMEM_READ_STRUCTURE(&color, &colorPaletteBuffer[colorPaletteIndex]);
 		return Some(color);
 	}
-	return None<Color565>();
+	return None;
 }
 
 Position AnimatedMovement::animateMovement(){

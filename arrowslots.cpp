@@ -112,7 +112,7 @@ Option<uint8_t> ArrowSlots::nextSlot(Arrow arrow){
         index++;
     }
 
-    return None<uint8_t>();
+    return None;
 }
 
 Option<Stratagem> ArrowSlots::tryMatchStratagemFromSlots(Option<uint8_t> maybeOverrideMatchLenght, Option<Stratagem> blacklistedStratagem) const {
@@ -153,12 +153,12 @@ Option<Stratagem> ArrowSlots::tryMatchStratagemFromSlots(Option<uint8_t> maybeOv
             return Some(stratagem.stratagemId);
         }  
     }
-    return None<Stratagem>();
+    return None;
 }
 
 void ArrowSlots::reset(){
     for(Option<Arrow>& maybeArrow : m_slots){
-        maybeArrow = None<Arrow>();
+        maybeArrow = None;
     }
 }
 

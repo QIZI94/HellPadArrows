@@ -23,7 +23,7 @@ static Option<Arrow> matchKeyToArrow(char key){
             return Some(map.arrow);
         }
     }
-    return None<Arrow>();
+    return None;
 }
 
 
@@ -40,7 +40,7 @@ struct MainModule : public module::ManagedModule{
         //Serial.print("Matched arrow: ");
 		
 
-        Option<uint8_t> nextSlotIndex = m_blockInputTimed.isEnabled() ? None<uint8_t>() : m_arrowSlots.nextSlot(arrow);
+        Option<uint8_t> nextSlotIndex = m_blockInputTimed.isEnabled() ? None : m_arrowSlots.nextSlot(arrow);
 
         if(uint8_t* p_nextIndex = nextSlotIndex.ptr_value()){
 			module::Display.showArrow(*p_nextIndex, Some(arrow));
@@ -58,8 +58,8 @@ struct MainModule : public module::ManagedModule{
 				Serial.print("Activated combination for: ");
 				Serial.println(ArrowSlots::GetStratagemName(*p_stratagem));
 				#endif
-				module::Display.showSlotSelection(None<uint8_t>());
-				module::Display.showStratagemSuggestion(None<Stratagem>(), module::DisplayRGBModule::StratagemSuggestion::SECONDARY);
+				module::Display.showSlotSelection(None);
+				module::Display.showStratagemSuggestion(None, module::DisplayRGBModule::StratagemSuggestion::SECONDARY);
 
 				module::Display.showStratagemSuggestion(maybeStratagem, module::DisplayRGBModule::StratagemSuggestion::PRIMARY);
 				module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::SUCCESS);
@@ -76,7 +76,7 @@ struct MainModule : public module::ManagedModule{
 			}
 			else if(m_arrowSlots.getSlotsUsedCount() == ARROW_MAX_SLOTS){
 				module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::FAIL);
-				module::Display.showOutcome(None<Stratagem>(), true);
+				module::Display.showOutcome(None, true);
 				m_blockInputTimed.setup(timedUnlockInput,2000);
 			}
 			else {
@@ -90,7 +90,7 @@ struct MainModule : public module::ManagedModule{
 
 				if(!maybePrimaryPartialStratagem.hasValue() && !maybeSecondaryPartialStratagem.hasValue()){
 					module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::FAIL);
-					module::Display.showOutcome(None<Stratagem>(), true);
+					module::Display.showOutcome(None, true);
 					m_blockInputTimed.setup(timedUnlockInput,2000);
 				}
 			}
@@ -99,7 +99,7 @@ struct MainModule : public module::ManagedModule{
         // out of slots
         else if(!m_blockInputTimed.isEnabled()){
             module::Buzzer.playPreset(module::BuzzerSoundsModule::SoundPreset::FAIL);
-			module::Display.showOutcome(None<Stratagem>(), true);
+			module::Display.showOutcome(None, true);
             m_blockInputTimed.setup(timedUnlockInput,2000);
         }
         else{

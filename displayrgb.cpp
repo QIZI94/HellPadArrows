@@ -456,7 +456,7 @@ static void requestProgressiveWobble(uint8_t amount, uint16_t startWobbleTime, u
 void requestScreenFlashing(uint16_t switchTime, uint8_t flashAmount, uint16_t delayFlashing = 0){
 	if(switchTime == 0 || flashAmount == 0){
 		delayFlashing = 0;
-		requestedScreenFlashing = None<FlashParams>();
+		requestedScreenFlashing = None;
 	}
 	else {
 		requestedScreenFlashing = Some(
@@ -647,7 +647,7 @@ static void clearWithGrid(gui::Position pos, gui::Size size){
 	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, ILI9341_DARKGREY, ILI9341_DARKGREEN, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
 }*/
 
-static void drawWindowBitPixel(const gui::Window& window, Option<gui::Color565> maybeOutline = None<gui::Color565>(), Option<gui::Position> clearPrevious = None<gui::Position>()){
+static void drawWindowBitPixel(const gui::Window& window, Option<gui::Color565> maybeOutline = None, Option<gui::Position> clearPrevious = None){
 	if(const gui::Position* p_clearPosition = clearPrevious.ptr_value()){
 		gui::drawWindowBitPixel(tft, window, maybeOutline, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithGrid}));
 	}
@@ -656,7 +656,7 @@ static void drawWindowBitPixel(const gui::Window& window, Option<gui::Color565> 
 	}
 }
 
-static void drawWindowBitPixelWithDarkGrid(const gui::Window& window, Option<gui::Color565> maybeOutline = None<gui::Color565>(), Option<gui::Position> clearPrevious = None<gui::Position>()){
+static void drawWindowBitPixelWithDarkGrid(const gui::Window& window, Option<gui::Color565> maybeOutline = None, Option<gui::Position> clearPrevious = None){
 	if(const gui::Position* p_clearPosition = clearPrevious.ptr_value()){
 		gui::drawWindowBitPixel(tft, window, maybeOutline, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithDarkGrid}));
 	}
@@ -856,21 +856,21 @@ void DisplayRGBModule::reset() {
 		arrowWindow.setColorPaletteIndex(uint8_t(ColorPalette::HELL_MAIN_COLOR));
 	}
 
-	showSlotSelection(None<uint8_t>());
+	showSlotSelection(None);
 	selectedUpperSlotPreviousPosition = slotUpperSelection.getPosition();
 	selectedLowerSlotPreviousPosition = slotLowerSelection.getPosition();
 
 	//m_selectedSlot = None<uint8_t>();
 
-	showStratagemSuggestion(None<Stratagem>(), PRIMARY);
-	showStratagemSuggestion(None<Stratagem>(), SECONDARY);
+	showStratagemSuggestion(None, PRIMARY);
+	showStratagemSuggestion(None, SECONDARY);
 	
-	showOutcome(None<Stratagem>(), false);
+	showOutcome(None, false);
 
 	wobble(1700, 5);
 
 	//mb_wasSuccessful = false;
-	maybeSuccessfulStratagemCallin = None<Stratagem>();
+	maybeSuccessfulStratagemCallin = None;
 
 	update();
 }
@@ -1095,7 +1095,7 @@ void DisplayRGBModule::drawDynamicContent() {
 			if(elapsedTime > p_progressiveWobble->targetTime){
 				wobble(p_progressiveWobble->previousWobbleTime, p_progressiveWobble->previousWobbleAmount);
 				//mi_wobbleStop = 0;
-				requestedProgressiveWobble = None<ProgressiveWobbleParams>();
+				requestedProgressiveWobble = None;
 			}
 		}
 		int16_t tmp = wobbleParams.mi_wobbleStop;
@@ -1113,7 +1113,7 @@ void DisplayRGBModule::drawDynamicContent() {
 
 		clearWithGrid(position, {.width = size.width, .height = 1});
 		if(size.height < (++position.y)){
-			requestedSlowClear = None<SlowVerticalClearParams>();
+			requestedSlowClear = None;
 		}
 	}
 
@@ -1121,7 +1121,7 @@ void DisplayRGBModule::drawDynamicContent() {
 		if(screenFlashTimer.isDown()){
 			uint8_t invert;
 			if(p_flashParams->moduloCounter == 0){
-				requestedScreenFlashing = None<FlashParams>();
+				requestedScreenFlashing = None;
 				invert = 0;
 			}
 			else {
@@ -1137,7 +1137,7 @@ void DisplayRGBModule::drawDynamicContent() {
 			//gui::drawOptimizedCircle(tft, p_explosionParams->position, p_explosionParams->currentRadius, ILI9341_WHITE);//drawOptimizedExplosion(p_explosionParams->position, p_explosionParams->currentRadius, p_explosionParams->targetRadius);
 			drawOptimizedExplosion(*p_explosionParams);
 			if(p_explosionParams->currentRadius == p_explosionParams->targetRadius){
-				requestedExplosion = None<ExplosionParams>();
+				requestedExplosion = None;
 			}
 			else {
 				p_explosionParams->currentRadius++;

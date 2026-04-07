@@ -9,7 +9,7 @@ public:
 	
 public:
     Option<uint8_t> nextSlot(Arrow arrow);
-    Option<Stratagem> tryMatchStratagemFromSlots(Option<uint8_t> maybeOverrideMatchLenght = None<uint8_t>(), Option<Stratagem> blacklistedStratagem = None<Stratagem>()) const;
+    Option<Stratagem> tryMatchStratagemFromSlots(Option<uint8_t> maybeOverrideMatchLenght = None, Option<Stratagem> blacklistedStratagem = None) const;
 
     void reset();
 

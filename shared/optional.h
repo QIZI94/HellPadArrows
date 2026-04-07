@@ -1,55 +1,95 @@
-#ifndef SHARED_H
-#define SHARED_H
+#ifndef R_OPTIONAL_H
+#define R_OPTIONAL_H
+namespace detail{
+	template<typename T>
+	struct remove_reference {
+		using type = T;
+	};
+
+	template<typename T>
+	struct remove_reference<T&> {
+		using type = T;
+	};
+
+	template<typename T>
+	struct remove_reference<T&&> {
+		using type = T;
+	};
+
+	template<typename T>
+	using remove_reference_t = typename remove_reference<T>::type;
+
+	template<typename T>
+	constexpr remove_reference_t<T>&& move(T&& t) noexcept {
+		return static_cast<remove_reference_t<T>&&>(t);
+	}
+} // namespace detail
+
+namespace detail{
+	struct NoTypeNoneOption{};
+} // namespace detail
+
+#ifdef ROPTION_USE_NAMESPACE
+namespace ropt{
+#endif
+template<typename T>
+struct None_t{};
 
 template<typename T>
 struct Option{
 public:
-    Option() : mb_hasValue(false){
-        memset(&m_value, 0, sizeof(T));
-    }
-    constexpr Option(T value) : m_value(value), mb_hasValue(true){}
+    constexpr Option() : m_uinitialized(0), mb_hasValue(false){}
+	constexpr Option(None_t<T>) : m_uinitialized(0), mb_hasValue(false){}
+	constexpr Option(None_t<detail::NoTypeNoneOption>) : m_uinitialized(0), mb_hasValue(false){}
+    constexpr Option(T value) : m_value(detail::move(value)), mb_hasValue(true){}
+	//constexpr Option(T&& value) : m_value(detail::move(value)), mb_hasValue(true){}
 
-    bool hasValue() const {
+    inline bool hasValue() const {
         return mb_hasValue;
     }
 
-    T* ptr_value() {
+    inline T* ptr_value() {
         return mb_hasValue ? &m_value : nullptr;
     }
-    const T* ptr_value() const {
+    inline const T* ptr_value() const {
         return mb_hasValue ? &m_value : nullptr;
     }
 
-	T& valueOr(T& other){
+	inline T& valueOr(T& other){
 		return mb_hasValue ? m_value : other;
 	}
 
-	const T& valueOr(const T& other){
+	inline const T& valueOr(const T& other){
 		return mb_hasValue ? m_value : other;
 	}
-	const T valueCopyOr(T other) const{
-		mb_hasValue ? m_value : other;
+	inline const T valueCopyOr(T other) const{
+		return valueOr(detail::move(other));
 	}
-	T& valueUnchecked() {
+	inline T& valueUnchecked() {
 		return m_value;
 	}
-	const T& valueUnchecked() const {
+	inline const T& valueUnchecked() const {
 		return m_value;
 	}
-	T valueCopyUnchecked() const {
+	inline T valueCopyUnchecked() const {
 		return m_value;
 	}
 	
 	
 private:
-    T m_value;
+	union{
+		char m_uinitialized;
+		T m_value;
+	};
     bool mb_hasValue = false;
 };
 template<typename T>
 Option<T> Some(T value){
-    return Option<T>(value);
+    return Option<T>(detail::move(value));
 }
-template<typename T>
-using None = Option<T>; 
 
-#endif // SHARED_H
+constexpr None_t<detail::NoTypeNoneOption> None = None_t<detail::NoTypeNoneOption>{};
+#ifdef ROPTION_USE_NAMESPACE
+} // namespace opt
+#endif
+#endif // R_OPTIONAL_H

@@ -61,12 +61,11 @@ private:
 	const char* ms_primarySuggestionText = EMPTY_PROGMEM_STRING;
 	const char* ms_secondarySuggestionText = EMPTY_PROGMEM_STRING;
 	const char* ms_outcomeText = EMPTY_PROGMEM_STRING;
-
+	Option<Stratagem> maybeSuccessfulStratagemCallin;
 	bool mb_redraw = true;
 	bool mb_textChanged = false;
 	bool mb_outcomeChanged = false;
 
-	bool mb_wasSuccessful = false;
 };
 
 inline DisplayRGBModule Display("DisplayRGBModule");

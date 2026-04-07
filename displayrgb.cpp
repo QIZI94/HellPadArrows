@@ -571,7 +571,7 @@ static bool waitTillExplosionsFinish(){
 }
 
 
-static ScriptedAction  scriptedAnimations[]{
+static ScriptedAction  scripted500KgBomb_Eagle[]{
 	ScriptedDelay(2000),
 	ScriptedDelay(2500),
 	ScriptedAction(&lowPriorityAnimations[0], true),
@@ -599,6 +599,36 @@ static ScriptedAction  scriptedAnimations[]{
 	waitTillExplosionsFinish,
 	ScriptedAction::None()
 };
+
+static ScriptedAction  scriptedOrbital120MM_HEBarrage[]{
+	ScriptedDelay(2000),
+	ScriptedDelay(2500),
+	ScriptedAction(&lowPriorityAnimations[0], true),
+	&lowPriorityAnimations[1],
+	&lowPriorityAnimations[2],
+	startShakingAndScreenFlashing,
+	ScriptedAction(
+		[]() -> bool {
+			
+			requestExplosion({121, 206}, 50, 0);
+	
+			return true;
+		}
+	),
+	ScriptedDelay(1670),
+	ScriptedAction(
+		[]() -> bool {
+
+			requestExplosion({150, 220}, 20, 1);
+			requestExplosion({90, 220}, 20, 2);
+			
+			return true;
+		}
+	),
+	waitTillExplosionsFinish,
+	ScriptedAction::None()
+};
+
 
 static ScriptedAction* currentScriptedAction = nullptr;
 
@@ -795,16 +825,18 @@ void DisplayRGBModule::showOutcome(Option<Stratagem> maybeStratagem, bool show =
 	if(!show){
 		outcomeText = EMPTY_PROGMEM_STRING;
 	}
-	else if(const Stratagem* p_stratagem = maybeStratagem.ptr_value()){
+	else if(maybeStratagem.hasValue()){
 		outcomeText = PSTR("SUCCESSFUL");
 		slotArrowColor = ColorPalette::HELL_MAIN_COLOR;
-		mb_wasSuccessful = true;
+		//mb_wasSuccessful = true;
 	}
 	else{
-		mb_wasSuccessful = false;
+		//mb_wasSuccessful = false;
 		slotArrowColor = ColorPalette::INVALID_COMBINATION_COLOR;
 		outcomeText = PSTR("FAILED");
 	}
+
+	maybeSuccessfulStratagemCallin = maybeStratagem;
 
 	for(gui::Window& arrowWindowSlot : arrowArrayWindowSlots[MAIN_ARROWS_IDX]){
 		arrowWindowSlot.setColorPaletteIndex(uint8_t(slotArrowColor));
@@ -837,7 +869,8 @@ void DisplayRGBModule::reset() {
 
 	wobble(1700, 5);
 
-	mb_wasSuccessful = false;
+	//mb_wasSuccessful = false;
+	maybeSuccessfulStratagemCallin = None<Stratagem>();
 
 	update();
 }
@@ -1172,18 +1205,28 @@ void DisplayRGBModule::drawDynamicContent() {
 		mb_redraw = false;
 	}
 	else if(mb_outcomeChanged){
-		int16_t outcomeTextX = mb_wasSuccessful ? 90 : 95;
+		bool b_wasSuccessful = maybeSuccessfulStratagemCallin.hasValue();
+		int16_t outcomeTextX = b_wasSuccessful ? 90 : 95;
 		clearWithGrid({ int16_t(outcomeTextX -10), 73}, {70, 8});
 		tft.setCursor(outcomeTextX, 73);
-		tft.setTextColor(mb_wasSuccessful ? ILI9341_GREEN : ILI9341_RED);
+		tft.setTextColor(b_wasSuccessful ? ILI9341_GREEN : ILI9341_RED);
 		tft.println((const __FlashStringHelper*)ms_outcomeText);
 
 		
 
-		if(ms_outcomeText != EMPTY_PROGMEM_STRING && mb_wasSuccessful){
+		if(ms_outcomeText != EMPTY_PROGMEM_STRING && b_wasSuccessful){
 			requestSlowClear({.x = 0, .y = 85}, {.width = 220, .height = 147});
 			
-			currentScriptedAction = &scriptedAnimations[0];
+
+			switch(*maybeSuccessfulStratagemCallin.ptr_value()){
+				case Stratagem::Orbital120MM_HEBarrage:
+					//currentScriptedAction = scriptedOrbital120MM_HEBarrage;
+					break;
+				default:
+					currentScriptedAction = scripted500KgBomb_Eagle;
+					break;
+			}
+			
 
 			//delay(100);
 			

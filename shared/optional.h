@@ -84,7 +84,7 @@ private:
     bool mb_hasValue = false;
 };
 template<typename T>
-Option<T> Some(T value){
+constexpr Option<T> Some(T value){
     return Option<T>(detail::move(value));
 }
 

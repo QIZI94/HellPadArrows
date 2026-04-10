@@ -1191,7 +1191,7 @@ void DisplayRGBModule::drawDynamicContent() {
 				}
 				for(gui::Window& suggestionArrow : suggestionArrowsEntry){
 					
-					drawWindowBitPixelWithDarkGrid(suggestionArrow, maybeOutline, suggestionArrow.getPosition());
+					drawWindowBitPixelWithDarkGrid(suggestionArrow, maybeOutline, Some(suggestionArrow.getPosition()));
 					suggestionArrow.updated();
 				}
 			}

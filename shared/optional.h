@@ -41,7 +41,7 @@ public:
     constexpr Option() : m_uinitialized(0), mb_hasValue(false){}
 	constexpr Option(None_t<T>) : m_uinitialized(0), mb_hasValue(false){}
 	constexpr Option(None_t<detail::NoTypeNoneOption>) : m_uinitialized(0), mb_hasValue(false){}
-    constexpr Option(T value) : m_value(detail::move(value)), mb_hasValue(true){}
+    constexpr explicit Option(T value) : m_value(detail::move(value)), mb_hasValue(true){}
 	//constexpr Option(T&& value) : m_value(detail::move(value)), mb_hasValue(true){}
 
     inline bool hasValue() const {

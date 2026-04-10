@@ -19,7 +19,8 @@ public:
     static const char* GetStratagemName(Stratagem stratagem);
 
 private:
-    Option<Arrow> m_slots[ARROW_MAX_SLOTS];
+    Arrow m_slots[ARROW_MAX_SLOTS];
+	uint8_t currentIndex = 0;
 };
 
 

@@ -102,17 +102,15 @@ static const PROGMEM StratagemMapping Stratagems[] = {
 };
 
 Option<uint8_t> ArrowSlots::nextSlot(Arrow arrow){
-    uint8_t index = 0;
-    for(Option<Arrow>& slot : m_slots){
-        if(!slot.hasValue()){
-            slot = Some(arrow);
-            return Some(index);
-        }
-
-        index++;
-    }
-
-    return None;
+	
+	
+	if(currentIndex < ARROW_MAX_SLOTS){
+		m_slots[currentIndex] = arrow;
+		return Some(currentIndex++);
+	}
+	else {
+    	return None;
+	}
 }
 
 Option<Stratagem> ArrowSlots::tryMatchStratagemFromSlots(Option<uint8_t> maybeOverrideMatchLenght, Option<Stratagem> blacklistedStratagem) const {
@@ -134,18 +132,17 @@ Option<Stratagem> ArrowSlots::tryMatchStratagemFromSlots(Option<uint8_t> maybeOv
         if(stratagemCallinLength > stratagem.stratagemCallinLength){
             continue;
         }
-        for(uint8_t strataIdx = 0; strataIdx < stratagemCallinLength; strataIdx++ ){
-            Arrow stratagemArrow = stratagem.stratagemCallin[strataIdx];
-            Option<Arrow> maybeArrow = m_slots[strataIdx];
 
-            if(const Arrow* p_arrow = maybeArrow.ptr_value()){
-                if(*p_arrow == stratagemArrow){
-                    countMatched++;
-                }
-                else{
-                    break;
-                }
-            }
+		if((currentIndex) != stratagemCallinLength){
+			continue;
+		}
+        for(uint8_t strataIdx = 0; strataIdx < stratagemCallinLength; strataIdx++ ){
+			if(m_slots[strataIdx] == stratagem.stratagemCallin[strataIdx]){
+				countMatched++;
+			}
+			else {
+				break;
+			}
 
         }
 
@@ -157,19 +154,12 @@ Option<Stratagem> ArrowSlots::tryMatchStratagemFromSlots(Option<uint8_t> maybeOv
 }
 
 void ArrowSlots::reset(){
-    for(Option<Arrow>& maybeArrow : m_slots){
-        maybeArrow = None;
-    }
+    currentIndex = 0;
 }
 
 uint8_t ArrowSlots::getSlotsUsedCount() const{
-    uint8_t slotsUsedCounter = 0;
-    for(const auto& slot : m_slots){
-        if(slot.hasValue()){
-            slotsUsedCounter++;
-        }
-    }
-    return slotsUsedCounter;
+
+    return currentIndex;
 }
 
 uint8_t ArrowSlots::GetStratagemArrows(Stratagem stratagem, Arrow* arrowsOut){
@@ -178,11 +168,14 @@ uint8_t ArrowSlots::GetStratagemArrows(Stratagem stratagem, Arrow* arrowsOut){
         PROGMEM_READ_STRUCTURE(&stratagemEntry, &stratagemProgmemEntry);
 		if(stratagemEntry.stratagemId == stratagem){
             uint8_t stratagemCallinLength = stratagemEntry.stratagemCallinLength;
-            memcpy(
+			for(uint8_t arrowIdx = 0; arrowIdx < stratagemCallinLength; ++arrowIdx){
+				arrowsOut[arrowIdx] = stratagemEntry.stratagemCallin[arrowIdx];
+			}
+            /*memcpy(
                 arrowsOut,
                 stratagemEntry.stratagemCallin,
                 stratagemCallinLength * sizeof(Arrow)
-            );
+            );*/
 			return stratagemCallinLength;
 		}
 	}

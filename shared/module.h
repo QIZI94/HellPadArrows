@@ -136,7 +136,7 @@ private: // member variables
     }
 
 	static InitializationWatcherFunPtr* GetInitializationWatcher() {
-		static InitializationWatcherFunPtr initializationWatcher = nullptr;
+		static InitializationWatcherFunPtr initializationWatcher = [](const module::ManagedModule &){};
 		return &initializationWatcher;
 	}
 

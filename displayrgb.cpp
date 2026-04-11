@@ -229,15 +229,15 @@ static uint8_t targetWobbleAmount = 5;
 static const ArrowToImageMapping PROGMEM bigArrowMapping[]{
 	{Arrow::UP,		DPS_ArrowUpBigBMP,		gui::Flip::NONE},
 	{Arrow::DOWN,	DPS_ArrowUpBigBMP,		gui::Flip::VERTICALLY},
-	{Arrow::LEFT,	DPS_ArrowLeftBigBMP,	gui::Flip::NONE},
-	{Arrow::RIGHT,	DPS_ArrowLeftBigBMP,	gui::Flip::HORIZONTALLY},
+	{Arrow::LEFT,	DPS_ArrowUpBigBMP,		gui::Flip::ROTATED_LEFT},
+	{Arrow::RIGHT,	DPS_ArrowUpBigBMP,		gui::Flip::VERTICALLY_ROTATED_LEFT},
 };
 
 static const ArrowToImageMapping PROGMEM tinyArrowMapping[]{
 	{Arrow::UP,		DPS_ArrowUpTinyBMP,	gui::Flip::NONE},
 	{Arrow::DOWN,	DPS_ArrowUpTinyBMP,	gui::Flip::VERTICALLY},
-	{Arrow::LEFT,	DPS_ArrowRightTinyBMP,	gui::Flip::HORIZONTALLY},
-	{Arrow::RIGHT,	DPS_ArrowRightTinyBMP, gui::Flip::NONE},
+	{Arrow::LEFT,	DPS_ArrowUpTinyBMP,	gui::Flip::ROTATED_LEFT},
+	{Arrow::RIGHT,	DPS_ArrowUpTinyBMP, gui::Flip::VERTICALLY_ROTATED_LEFT},
 };
 
 const gui::Color565 PROGMEM colorPaletteBuf[]{
@@ -986,8 +986,10 @@ void DisplayRGBModule::drawStaticContent(){
 	drawWindowBitPixel(logoWindow, Some(OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y - 10, screenWidth, 4);
 
+	
 
 	drawSelectionBackgroundGrid();
+	//drawWindowBitPixel(gui::Window(240/2,320/2, DPS_ArrowUpBigBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR), false, gui::Flip::VERTICALLY_ROTATED_LEFT),Some(OUTLINE_COLOR));
 	//arrow placeholder
 
 /*

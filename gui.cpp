@@ -141,11 +141,11 @@ void drawBitmapWithOutline(Adafruit_ILI9341& tft, CompressedImageBuffer::iterato
 
 	tft.startWrite();
 	bool alreadyPreloaded = false;
-	for (int16_t j = 0; j < height; j++) {
+	for (int16_t pixelY = 0; pixelY < height; pixelY++) {
 		bool wasPreviousPointPixel = false;
 		
-		for (int16_t i = 0; i < width; i++) {
-			if (i & BITWISE_MODULO_8BITS_MASK){
+		for (int16_t pixelX = 0; pixelX < width; pixelX++) {
+			if (pixelX & BITWISE_MODULO_8BITS_MASK){
 				b <<= 1;
 			}
 			else{
@@ -165,11 +165,11 @@ void drawBitmapWithOutline(Adafruit_ILI9341& tft, CompressedImageBuffer::iterato
 				if(!neghborLeft){
 					pixelColor = outlineColor;
 				}
-				else if(i == width - 1){
+				else if(pixelX == width - 1){
 					pixelColor = outlineColor;
 				}
 				else {
-					int16_t rightNegihborPixelPosition = i + 1;
+					int16_t rightNegihborPixelPosition = pixelX + 1;
 					uint8_t n;
 					if(rightNegihborPixelPosition & BITWISE_MODULO_8BITS_MASK){
 						n = (b << 1);
@@ -198,28 +198,53 @@ void drawBitmapWithOutline(Adafruit_ILI9341& tft, CompressedImageBuffer::iterato
 					}*/
 					
 				}
-				int16_t pixelX;
-				int16_t pixelY;
+				
+				//uint8_t localX;
+				int16_t finalX;
+				int16_t finalY;
+				
+			
 				switch (flip)
 				{
+					case gui::Flip::ROTATED_LEFT:
+					case gui::Flip::HORIZONTALLY_ROTATED_LEFT:
+						finalX = pixelY;
+						break;
 					case gui::Flip::HORIZONTALLY:
 					case gui::Flip::HORIZONTALLY_AND_VERTICALLY:
-						pixelX = topX + width - 1 - i;
+						finalX = width - 1 - pixelX;
+						break;
+				
+					case gui::VERTICALLY_ROTATED_LEFT:
+						finalX = height - 1 - pixelY;
 						break;
 					default:
-						pixelX = topX + i;
+						finalX = pixelX;
 						break;
 				}
 				switch(flip){
+
+					case gui::Flip::ROTATED_LEFT:
+					case gui::Flip::VERTICALLY_ROTATED_LEFT:
+						finalY = width - 1 - pixelX;
+						break;
+					case gui::Flip::HORIZONTALLY_ROTATED_LEFT:
+						finalY = height - (width - 1 - pixelX);
+						break;
 					case gui::Flip::VERTICALLY:
 					case gui::Flip::HORIZONTALLY_AND_VERTICALLY:
-						pixelY = topY + height - 1 - j;
+						finalY = height - 1 - pixelY;
 						break;
+					
 					default:
-						pixelY = topY + j;
+						finalY = pixelY;
 						break;
 				}
-				tft.writePixel(pixelX, pixelY, pixelColor);
+
+				
+
+				
+				tft.writePixel(topX + finalX, topY + finalY, pixelColor);
 				
 				wasPreviousPointPixel = true;
 			}

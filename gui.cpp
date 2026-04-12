@@ -122,7 +122,21 @@ void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, Option
 	gui::Color565 mainColor =  Window::LoadColorFromColorPalette(window.getColorPaletteIndex()).valueOr(ILI9341_BLACK);
 
 	if(const gui::ClearSettings* p_clearSettings = maybeClear.ptr_value()){
-		p_clearSettings->clearFn(p_clearSettings->position, gui::Size{.width = windowSize.width, .height = windowSize.height});
+		uint8_t width;
+		uint8_t height;
+		switch(window.getFlipSetting()){
+			case Flip::ROTATED_LEFT:
+			case Flip::VERTICALLY_ROTATED_LEFT:
+			case Flip::HORIZONTALLY_ROTATED_LEFT:
+				width = windowSize.height;
+				height = windowSize.width;
+				break;
+			default:
+				width = windowSize.width;
+				height = windowSize.height;
+		}
+		
+		p_clearSettings->clearFn(p_clearSettings->position, gui::Size{.width = width, .height = height});
 	}
 	if(!window.isHidden()){
 		Color565 outlineColor = maybeOutlineColor.valueOr(mainColor);
@@ -229,7 +243,7 @@ void drawBitmapWithOutline(Adafruit_ILI9341& tft, CompressedImageBuffer::iterato
 						finalY = width - 1 - pixelX;
 						break;
 					case gui::Flip::HORIZONTALLY_ROTATED_LEFT:
-						finalY = height - (width - 1 - pixelX);
+						finalY = height - ((width >> 1) - 1 - pixelX);
 						break;
 					case gui::Flip::VERTICALLY:
 					case gui::Flip::HORIZONTALLY_AND_VERTICALLY:

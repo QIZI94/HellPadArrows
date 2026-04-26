@@ -45,7 +45,6 @@ struct ScriptedDelay{
 		return false;
 	}
 };
-
 struct ScriptedAction{
 	using ScriptedFunction = bool(* const)();
 	enum class ActionType : uint8_t{
@@ -73,45 +72,7 @@ struct ScriptedAction{
 	const ActionType actionType;
 
 
-	bool run(){
-		switch (actionType){
-			case ScriptedAction::ActionType::DELAY:
-				return scriptedDelay.runDelay();
-			case ScriptedAction::ActionType::WINDOW:
-				if(window->isHidden()){
-					window->setHidden(false);
-				}
-				return true;
-			
-			case ScriptedAction::ActionType::ANIMATION:
-				
-		
-				if(animation->isDisabled()){
-					animation->setDisabled(false);
-					animation->window.setHidden(false);
-					animation->restart();
-				}
-				else if(animation->isFinished()){
-					//animation->window.setHidden(true);
-					animation->setDisabled(true);
-					return true;
-				}
-				
-				break;
-			case ScriptedAction::ActionType::ANIMATION_NON_BLOCKING:
-				animation->setDisabled(false);
-				animation->window.setHidden(false);
-				animation->restart();
-				return true;
-
-			case ScriptedAction::ActionType::FUNCTION:
-				return function();
-		
-			default:
-				break;
-		}
-		return false;
-	}
+	bool run() const;
 	static constexpr ScriptedAction None() { return ScriptedAction(); }
 };
 
@@ -299,6 +260,8 @@ static gui::Window slotLowerSelection(
 	640, ARROWS_OFFSET_Y + BIG_ARROW_HEIGHT + 5, DPS_ArrowSelectorLowerBMP, uint8_t(ColorPalette::SELECTOR_COLOR), true
 );
 
+static gui::Window animationGroundWindow(45,200,DPS_BotsGroundFinal);
+
 
 static gui::Position selectedUpperSlotPreviousPosition = {-100,-100};
 static gui::Position selectedLowerSlotPreviousPosition = {-100.-100};
@@ -328,6 +291,7 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 		true
 	),*/
 	
+	// 500kg bomb scripted animations
 	gui::AnimatedMovement(
 		gui::Window(320, 72, DPS_Eagle1Mid, uint8_t(ColorPalette::EAGLE1_COLOR), true),
 		gui::Position{-20, 72},	gui::Position{320, 72},
@@ -346,9 +310,40 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR), true),
 		gui::Position{60, 72+6},	gui::Position{110+1, 200+6},
 		4000,
-		gui::AnimatedMovement::FinishBehavior::RUN_ONCE_AND_HIDE,
+		gui::AnimatedMovement::FinishBehavior::RUN_ONCE,
 		true
 	),
+	// scriptedOrbital120MM_HEBarrage
+	gui::AnimatedMovement(
+		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR), true, gui::Flip::HORIZONTALLY_ROTATED_LEFT),
+		gui::Position{138, 72+6},	gui::Position{138, 200+30},
+		3000,
+		gui::AnimatedMovement::FinishBehavior::RUN_ONCE,
+		true, false, true
+	),
+	gui::AnimatedMovement(
+		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR), true, gui::Flip::HORIZONTALLY_ROTATED_LEFT),
+		gui::Position{83, 72+6},	gui::Position{83, 200+30},
+		3500,
+		gui::AnimatedMovement::FinishBehavior::RUN_ONCE,
+		true, false, true
+	),
+	gui::AnimatedMovement(
+		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR), true, gui::Flip::HORIZONTALLY_ROTATED_LEFT),
+		gui::Position{203, 72+6},	gui::Position{203, 200+30},
+		4250,
+		gui::AnimatedMovement::FinishBehavior::RUN_ONCE,
+		true, false, true
+	),
+	gui::AnimatedMovement(
+		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR), true, gui::Flip::HORIZONTALLY_ROTATED_LEFT),
+		gui::Position{30, 72+6},	gui::Position{30, 200+30},
+		6000,
+		gui::AnimatedMovement::FinishBehavior::RUN_ONCE,
+		true, false, true
+	),
+	
+	
 	
 
 // STARS
@@ -554,6 +549,18 @@ void drawOptimizedExplosion(const ExplosionParams& p_explosionParams){
 	
 }
 
+static void clearWithDarkGrid(gui::Position pos, gui::Size size){
+	//tft.fillRect(pos.x, pos.y, size.width, size.height, ILI9341_BLACK);
+	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, gui::ConvertRGBtoRGB565(100,0,100), gui::ConvertRGBtoRGB565(70,70,70), GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
+}
+
+static void clearWithGrid(gui::Position pos, gui::Size size){
+	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, GRIDLINE_COLOR, CLEAR_COLOR, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
+}
+static void clearWithGrid8Bit(gui::Position8Bit position, gui::Size8Bit size){
+	clearWithGrid(position, size);
+}
+
 static bool startShakingAndScreenFlashing(){
 	requestProgressiveWobble(40, 50, 100, 1800);
 	requestScreenFlashing(50, 17, 150);
@@ -571,9 +578,10 @@ static bool waitTillExplosionsFinish(){
 }
 
 
-static ScriptedAction  scripted500KgBomb_Eagle[]{
-	ScriptedDelay(2000),
-	ScriptedDelay(2500),
+static const ScriptedAction  scripted500KgBomb_Eagle[]{
+	//ScriptedDelay(2000),
+	//ScriptedDelay(2500),
+	&animationGroundWindow,
 	ScriptedAction(&lowPriorityAnimations[0], true),
 	&lowPriorityAnimations[1],
 	&lowPriorityAnimations[2],
@@ -600,28 +608,47 @@ static ScriptedAction  scripted500KgBomb_Eagle[]{
 	ScriptedAction::None()
 };
 
-static ScriptedAction  scriptedOrbital120MM_HEBarrage[]{
-	ScriptedDelay(2000),
-	ScriptedDelay(2500),
-	ScriptedAction(&lowPriorityAnimations[0], true),
-	&lowPriorityAnimations[1],
-	&lowPriorityAnimations[2],
+static const ScriptedAction  scriptedOrbital120MM_HEBarrage[]{
+	&animationGroundWindow,
+	ScriptedAction(&lowPriorityAnimations[4], true),
+	ScriptedAction(&lowPriorityAnimations[5], true),
+	ScriptedAction(&lowPriorityAnimations[6], true),
+	&lowPriorityAnimations[3],
+	
 	startShakingAndScreenFlashing,
 	ScriptedAction(
 		[]() -> bool {
 			
-			requestExplosion({121, 206}, 50, 0);
+			requestExplosion(gui::Position8Bit::from(lowPriorityAnimations[3].getEndPos()), 30, 0);
 	
 			return true;
 		}
 	),
-	ScriptedDelay(1670),
+	&lowPriorityAnimations[4],
 	ScriptedAction(
 		[]() -> bool {
-
-			requestExplosion({150, 220}, 20, 1);
-			requestExplosion({90, 220}, 20, 2);
 			
+			requestExplosion(gui::Position8Bit::from(lowPriorityAnimations[4].getEndPos()), 18, 1);
+	
+			return true;
+		}
+	),
+	&lowPriorityAnimations[5],
+	ScriptedAction(
+		[]() -> bool {
+			requestExplosion({150, 220}, 35, 0);
+			requestExplosion({70, 220}, 35, 1);
+			requestExplosion(gui::Position8Bit::from(lowPriorityAnimations[5].getEndPos()), 25, 2);
+	
+			return true;
+		}
+	),
+	&lowPriorityAnimations[6],
+	ScriptedAction(
+		[]() -> bool {
+			
+			requestExplosion(gui::Position8Bit::from(lowPriorityAnimations[6].getEndPos()), 20, 3);
+	
 			return true;
 		}
 	),
@@ -629,19 +656,46 @@ static ScriptedAction  scriptedOrbital120MM_HEBarrage[]{
 	ScriptedAction::None()
 };
 
+gui::Window lasser = gui::Window(0,0, nullptr);
+uint8_t a = 0;
+static const ScriptedAction  scriptedOrbitalLaser[]{
+	ScriptedAction(
+		[]() -> bool {
+			constexpr uint8_t MAX_OFFSET = 10;
 
-static ScriptedAction* currentScriptedAction = nullptr;
+			constexpr gui::Position8Bit startPos {.x = 70, .y = 130};
+			constexpr gui::Size8Bit lineSize {.width = 1, .height = 130};
+			
+
+			//static constexpr uint8_t []
+			
+			clearWithGrid8Bit(startPos.withX(startPos.x + a), lineSize);
+			for(uint8_t offset = 1; offset < MAX_OFFSET; ++offset){
+				
+				//tft.writeLine(startPos.x, startPos.y + offset, endPos.x + (MAX_OFFSET - offset) + a, endPos.y, ILI9341_WHITE);
+				tft.drawFastVLine(startPos.x + a + offset, startPos.y, lineSize.height, ILI9341_WHITE);
+			}
+			if(a % 20 == 0){
+				requestExplosion(startPos.withX(startPos.x + a), 10, 0);
+			}
+			a++;
+
+			
+
+			//lasser.
+
+			//gui::Window()
+
+			return false;
+		}
+	)
+};
+
+
+static const ScriptedAction* currentScriptedAction = nullptr;
 
 
 
-static void clearWithDarkGrid(gui::Position pos, gui::Size size){
-	//tft.fillRect(pos.x, pos.y, size.width, size.height, ILI9341_BLACK);
-	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, gui::ConvertRGBtoRGB565(100,0,100), gui::ConvertRGBtoRGB565(70,70,70), GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
-}
-
-static void clearWithGrid(gui::Position pos, gui::Size size){
-	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, GRIDLINE_COLOR, CLEAR_COLOR, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
-}
 /*
 static void clearWithGrid(gui::Position pos, gui::Size size){
 	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, ILI9341_DARKGREY, ILI9341_DARKGREEN, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
@@ -1027,7 +1081,6 @@ void DisplayRGBModule::drawStaticContent(){
 	
 }
 
-
 void DisplayRGBModule::drawDynamicContent() {
 	/*TimedExecution10ms** begin = TimedExecution10ms::List::getTimedExecutionListBegin();
 	if(*begin == nullptr){
@@ -1047,25 +1100,23 @@ void DisplayRGBModule::drawDynamicContent() {
 		}
 	}*/
 	//if(currentScriptedAction != &scriptedAnimations[CONST_LENGTH(scriptedAnimations)]){
-	
-	if(currentScriptedAction != nullptr){
-
-		
-		if(currentScriptedAction->actionType == ScriptedAction::ActionType::NONE){
-			clearWithGrid({.x = 70, .y = 147}, {.width = 100, .height = 6});
-			drawSelectionBackgroundGrid();
-			currentScriptedAction = nullptr;
+	if(!requestedSlowClear.hasValue()){		
+		if(currentScriptedAction != nullptr){	
+			if(currentScriptedAction->actionType == ScriptedAction::ActionType::NONE){
+				clearWithGrid8Bit({.x = 70, .y = 147}, {.width = 100, .height = 6});
+				drawSelectionBackgroundGrid();
+				currentScriptedAction = nullptr;
+			}
+			else if(currentScriptedAction->run()){
+				currentScriptedAction++;
+							
+			}
 		}
-		else if(currentScriptedAction->run()){
-			currentScriptedAction++;
-						
-		}
-		
 		
 		
 	}
 	
-	
+
 
 	//if(mi_wobbleAmountY != 0){
 	uint16_t timeNow = millis();
@@ -1218,11 +1269,13 @@ void DisplayRGBModule::drawDynamicContent() {
 
 		if(ms_outcomeText != EMPTY_PROGMEM_STRING && b_wasSuccessful){
 			requestSlowClear({.x = 0, .y = 85}, {.width = 220, .height = 147});
-			
 
 			switch(*maybeSuccessfulStratagemCallin.ptr_value()){
 				case Stratagem::Orbital120MM_HEBarrage:
-					//currentScriptedAction = scriptedOrbital120MM_HEBarrage;
+					currentScriptedAction = scriptedOrbital120MM_HEBarrage;
+					break;
+				case Stratagem::OrbitalLaser:
+					currentScriptedAction = scriptedOrbitalLaser;
 					break;
 				default:
 					currentScriptedAction = scripted500KgBomb_Eagle;
@@ -1287,6 +1340,50 @@ void DisplayRGBModule::drawDynamicContent() {
 
 	
 }
+
+
+bool ScriptedAction::run() const {
+	switch (actionType){
+		case ScriptedAction::ActionType::DELAY:
+			return scriptedDelay.runDelay();
+		case ScriptedAction::ActionType::WINDOW:
+			//if(window->isHidden()){
+			//window->setHidden(false);
+			drawWindowBitPixel(*window, Some(SELECTOR_OUTLINE_COLOR));
+			//}
+			return true;
+		
+		case ScriptedAction::ActionType::ANIMATION:
+			
+	
+			if(animation->isDisabled()){
+				animation->setDisabled(false);
+				animation->window.setHidden(false);
+				animation->restart();
+			}
+			else if(animation->isFinished()){
+				//animation->window.setHidden(true);
+				animation->setDisabled(true);
+				return true;
+			}
+			
+			break;
+		case ScriptedAction::ActionType::ANIMATION_NON_BLOCKING:
+			animation->setDisabled(false);
+			animation->window.setHidden(false);
+			animation->restart();
+			return true;
+
+		case ScriptedAction::ActionType::FUNCTION:
+			return function();
+	
+		default:
+			break;
+	}
+	return false;
+	}
+
+
 
 } // rgb display module
 

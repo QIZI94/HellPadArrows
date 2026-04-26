@@ -43,6 +43,21 @@ struct Position8Bit{
 		return x != other.x || y != other.y;
 	}
 
+	constexpr Position8Bit withX(uint8_t newX) {
+		return Position8Bit{
+			.x = newX,
+			.y = y
+		};
+	}
+	constexpr Position8Bit withY(uint8_t newY) {
+		return Position8Bit{
+			.x = x,
+			.y = newY
+		};
+	}
+
+	
+
 	Position8Bit lerpTo(const Position8Bit& to, uint16_t durationMs, uint16_t elapsedTtimeMs) const;
 
 	static Position8Bit from(const Position& position){
@@ -66,8 +81,8 @@ struct Size {
 };
 
 struct Size8Bit {
-	int8_t width;
-	int8_t height;
+	uint8_t width;
+	uint8_t height;
 
 	operator Size() const {
 		return Size{.width = int16_t(width), .height = int16_t(height)};
@@ -77,6 +92,19 @@ struct Size8Bit {
 	}
 	bool operator !=(const Size& other){
 		return width != other.width || height != other.height;
+	}
+
+	constexpr Size8Bit withWidth(uint8_t newWidth){
+		return Size8Bit{
+			.width = newWidth,
+			.height = height
+		};
+	}
+	constexpr Size8Bit withHeight(uint8_t newHeight){
+		return Size8Bit{
+			.width = width,
+			.height = newHeight
+		};
 	}
 
 };

@@ -286,12 +286,13 @@ private:
 	Properties properties;
 #else 
 	Position position;
-	bool b_isHidden;// : 1;
-	bool b_needsUpdate;// : 1;
+	//bool b_isHidden;// : 1;
+	//bool b_needsUpdate;// : 1;
 	struct{
-		
-		gui::Flip flipSetting : 4;// : 6;
-		uint8_t colorPaletteIndex : 4;
+		bool b_isHidden : 1;
+		bool b_needsUpdate : 1;
+		gui::Flip flipSetting : 3;// : 6;
+		uint8_t colorPaletteIndex : 3;
 	};
 #endif
 	

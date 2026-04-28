@@ -50,15 +50,13 @@ struct ScriptedAction{
 	enum class ActionType : uint8_t{
 		NONE,
 		DELAY,
-		WINDOW,
 		ANIMATION,
 		ANIMATION_NON_BLOCKING,
 		FUNCTION
 	};
 
-	constexpr ScriptedAction() : window(nullptr), actionType(ActionType::NONE) {}
+	constexpr ScriptedAction() : animation(nullptr), actionType(ActionType::NONE) {}
 	constexpr ScriptedAction(ScriptedDelay scriptedDelay) : scriptedDelay(scriptedDelay), actionType(ActionType::DELAY){}
-	constexpr ScriptedAction(gui::Window* window) : window(window), actionType(ActionType::WINDOW){}
 	constexpr ScriptedAction(gui::AnimatedMovement* animation, bool nonBlocking = false)
 		: animation(animation), actionType(nonBlocking ? ActionType::ANIMATION_NON_BLOCKING : ActionType::ANIMATION){}
 	constexpr ScriptedAction(const ScriptedFunction function) : function(function), actionType(ActionType::FUNCTION){}
@@ -581,7 +579,6 @@ static bool waitTillExplosionsFinish(){
 static const ScriptedAction  scripted500KgBomb_Eagle[]{
 	//ScriptedDelay(2000),
 	//ScriptedDelay(2500),
-	&animationGroundWindow,
 	ScriptedAction(&lowPriorityAnimations[0], true),
 	&lowPriorityAnimations[1],
 	&lowPriorityAnimations[2],
@@ -609,7 +606,6 @@ static const ScriptedAction  scripted500KgBomb_Eagle[]{
 };
 
 static const ScriptedAction  scriptedOrbital120MM_HEBarrage[]{
-	&animationGroundWindow,
 	ScriptedAction(&lowPriorityAnimations[4], true),
 	ScriptedAction(&lowPriorityAnimations[5], true),
 	ScriptedAction(&lowPriorityAnimations[6], true),
@@ -1100,9 +1096,15 @@ void DisplayRGBModule::drawDynamicContent() {
 		}
 	}*/
 	//if(currentScriptedAction != &scriptedAnimations[CONST_LENGTH(scriptedAnimations)]){
+	static bool groundDrawn = false;
 	if(!requestedSlowClear.hasValue()){		
 		if(currentScriptedAction != nullptr){	
-			if(currentScriptedAction->actionType == ScriptedAction::ActionType::NONE){
+			if(groundDrawn == false){
+				drawWindowBitPixel(animationGroundWindow, Some(SELECTOR_OUTLINE_COLOR));
+				//tft.drawFastHLine(groundPosition.x, groundPosition.y+14, 180, INVALID_COMBINATION_COLOR);
+				groundDrawn = true;
+			}
+			else if(currentScriptedAction->actionType == ScriptedAction::ActionType::NONE){
 				clearWithGrid8Bit({.x = 70, .y = 147}, {.width = 100, .height = 6});
 				drawSelectionBackgroundGrid();
 				currentScriptedAction = nullptr;
@@ -1281,6 +1283,7 @@ void DisplayRGBModule::drawDynamicContent() {
 					currentScriptedAction = scripted500KgBomb_Eagle;
 					break;
 			}
+			groundDrawn = false;
 			
 
 			//delay(100);
@@ -1346,12 +1349,7 @@ bool ScriptedAction::run() const {
 	switch (actionType){
 		case ScriptedAction::ActionType::DELAY:
 			return scriptedDelay.runDelay();
-		case ScriptedAction::ActionType::WINDOW:
-			//if(window->isHidden()){
-			//window->setHidden(false);
-			drawWindowBitPixel(*window, Some(SELECTOR_OUTLINE_COLOR));
-			//}
-			return true;
+
 		
 		case ScriptedAction::ActionType::ANIMATION:
 			

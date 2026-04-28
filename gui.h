@@ -11,6 +11,7 @@
 namespace gui{
 
 using Color565 = uint16_t;
+using ColorPaletteIndex = uint8_t;
 
 
 struct Position {
@@ -238,7 +239,7 @@ public:
 		this->colorPaletteIndex = colorPaletteIndex;
 	}
 
-	inline uint8_t getColorPaletteIndex() const {
+	inline ColorPaletteIndex getColorPaletteIndex() const {
 		return colorPaletteIndex;
 	}
 
@@ -291,8 +292,8 @@ private:
 	struct{
 		bool b_isHidden : 1;
 		bool b_needsUpdate : 1;
-		gui::Flip flipSetting : 3;// : 6;
-		uint8_t colorPaletteIndex : 3;
+		Flip flipSetting : 3;// : 6;
+		ColorPaletteIndex colorPaletteIndex : 3;
 	};
 #endif
 	
@@ -456,7 +457,7 @@ int16_t lerp(int16_t start, int16_t end, uint16_t durationMs, uint16_t elapsedTt
 Position lerp(const Position& start, const Position& end, uint16_t durationMs, uint16_t elapsedTtimeMs);
 Color565 lerpColor565(Color565 color_start, Color565 color_end, uint16_t durationMs, uint16_t elapsedTtimeMs);
 
-void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, Option<Color565> maybeOutlineColor = None, Option<gui::ClearSettings> maybeClear = None);
+void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, Option<ColorPaletteIndex> maybeOutlineColor = None, Option<gui::ClearSettings> maybeClear = None);
 void drawHorizontalSeparatorWithBorders(Adafruit_ILI9341& tft, int16_t x, int16_t y, int16_t width, int16_t height);
 
 void drawBitmapWithOutline(Adafruit_ILI9341& tft, CompressedImageBuffer::iterator imageBufferIterator, int16_t topX, int16_t topY, int16_t width, int16_t height, Color565 mainColor, Color565 outlineColor, gui::Flip flip = gui::Flip::NONE);

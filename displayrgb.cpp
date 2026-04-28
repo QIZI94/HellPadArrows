@@ -203,7 +203,9 @@ const gui::Color565 PROGMEM colorPaletteBuf[]{
 	INVALID_COMBINATION_COLOR,
 	HELL_MAIN_COLOR,
 	SELECTOR_COLOR,
-	EAGLE1_COLOR
+	EAGLE1_COLOR,
+	OUTLINE_COLOR,
+	SELECTOR_OUTLINE_COLOR
 	
 };
 
@@ -211,9 +213,14 @@ enum class ColorPalette : uint8_t{
 	INVALID_COMBINATION_COLOR,
 	HELL_MAIN_COLOR,
 	SELECTOR_COLOR,
-	EAGLE1_COLOR
+	EAGLE1_COLOR,
+	OUTLINE_COLOR,
+	SELECTOR_OUTLINE_COLOR
 };
 
+constexpr Option<gui::ColorPaletteIndex> SomePalette(ColorPalette colorPalette){
+	return Some(gui::ColorPaletteIndex(colorPalette));
+}
 
 static gui::Window arrowArrayWindowSlots[][ARROW_MAX_SLOTS] = {
 	// MAIN ARROWS
@@ -697,7 +704,7 @@ static void clearWithGrid(gui::Position pos, gui::Size size){
 	gui::drawGeneratedGridPattern(tft, pos.x, pos.y, size.width, size.height, GRID_SPACING, ILI9341_DARKGREY, ILI9341_DARKGREEN, GRID_LINES_OFFSET_X, GRID_LINES_OFFSET_Y);
 }*/
 
-static void drawWindowBitPixel(const gui::Window& window, Option<gui::Color565> maybeOutline = None, Option<gui::Position> clearPrevious = None){
+static void drawWindowBitPixel(const gui::Window& window, Option<gui::ColorPaletteIndex> maybeOutline = None, Option<gui::Position> clearPrevious = None){
 	if(const gui::Position* p_clearPosition = clearPrevious.ptr_value()){
 		gui::drawWindowBitPixel(tft, window, maybeOutline, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithGrid}));
 	}
@@ -706,7 +713,7 @@ static void drawWindowBitPixel(const gui::Window& window, Option<gui::Color565> 
 	}
 }
 
-static void drawWindowBitPixelWithDarkGrid(const gui::Window& window, Option<gui::Color565> maybeOutline = None, Option<gui::Position> clearPrevious = None){
+static void drawWindowBitPixelWithDarkGrid(const gui::Window& window, Option<gui::ColorPaletteIndex> maybeOutline = None, Option<gui::Position> clearPrevious = None){
 	if(const gui::Position* p_clearPosition = clearPrevious.ptr_value()){
 		gui::drawWindowBitPixel(tft, window, maybeOutline, Some(gui::ClearSettings{.position = *p_clearPosition, .clearFn = clearWithDarkGrid}));
 	}
@@ -1028,12 +1035,12 @@ void DisplayRGBModule::drawStaticContent(){
 	int16_t screenWidth = tft.width();
 	gui::Window logoWindow{10, 30, DPS_LogoSmall, uint8_t(ColorPalette::HELL_MAIN_COLOR), false, gui::Flip::VERTICALLY};
 
-	drawWindowBitPixel(logoWindow, Some(OUTLINE_COLOR));
+	drawWindowBitPixel(logoWindow, SomePalette(ColorPalette::OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y + 35, screenWidth, 4);
 
 	logoWindow.setPosition({10, 262});
 	logoWindow.setFlipSetting(gui::Flip::NONE);
-	drawWindowBitPixel(logoWindow, Some(OUTLINE_COLOR));
+	drawWindowBitPixel(logoWindow, SomePalette(ColorPalette::OUTLINE_COLOR));
 	gui::drawHorizontalSeparatorWithBorders(tft, 1, logoWindow.getPosition().y - 10, screenWidth, 4);
 
 	
@@ -1100,7 +1107,7 @@ void DisplayRGBModule::drawDynamicContent() {
 	if(!requestedSlowClear.hasValue()){		
 		if(currentScriptedAction != nullptr){	
 			if(groundDrawn == false){
-				drawWindowBitPixel(animationGroundWindow, Some(SELECTOR_OUTLINE_COLOR));
+				drawWindowBitPixel(animationGroundWindow, SomePalette(ColorPalette::SELECTOR_OUTLINE_COLOR));
 				//tft.drawFastHLine(groundPosition.x, groundPosition.y+14, 180, INVALID_COMBINATION_COLOR);
 				groundDrawn = true;
 			}
@@ -1240,9 +1247,9 @@ void DisplayRGBModule::drawDynamicContent() {
 		}
 		if(currentScriptedAction == nullptr){
 			for(auto& suggestionArrowsEntry : arrowArrayWindowSlots){
-				Option<gui::Color565> maybeOutline;
+				Option<gui::ColorPaletteIndex> maybeOutline;
 				if(&suggestionArrowsEntry == &arrowArrayWindowSlots[MAIN_ARROWS_IDX]){
-					maybeOutline = Some(OUTLINE_COLOR);
+					maybeOutline = SomePalette(ColorPalette::OUTLINE_COLOR);
 				}
 				for(gui::Window& suggestionArrow : suggestionArrowsEntry){
 					
@@ -1250,10 +1257,10 @@ void DisplayRGBModule::drawDynamicContent() {
 					suggestionArrow.updated();
 				}
 			}
-			drawWindowBitPixelWithDarkGrid(slotUpperSelection, Some(SELECTOR_OUTLINE_COLOR), Some(selectedUpperSlotPreviousPosition));
+			drawWindowBitPixelWithDarkGrid(slotUpperSelection, SomePalette(ColorPalette::SELECTOR_OUTLINE_COLOR), Some(selectedUpperSlotPreviousPosition));
 			slotUpperSelection.updated();
 
-			drawWindowBitPixelWithDarkGrid(slotLowerSelection, Some(SELECTOR_OUTLINE_COLOR), Some(selectedLowerSlotPreviousPosition));
+			drawWindowBitPixelWithDarkGrid(slotLowerSelection, SomePalette(ColorPalette::SELECTOR_OUTLINE_COLOR), Some(selectedLowerSlotPreviousPosition));
 			slotLowerSelection.updated();
 		}
 
@@ -1324,7 +1331,7 @@ void DisplayRGBModule::drawDynamicContent() {
 		//ColorAndOutline matchedColor// = matchWindowWithColor(&p_animation->window);
 		
 
-		drawWindowBitPixel(p_animation->window, Some(OUTLINE_COLOR), Some(oldPosition)/*p_animation->clearBeforeDraw() ? Some(oldPosition) : None<gui::Position>()*/);
+		drawWindowBitPixel(p_animation->window, SomePalette(ColorPalette::OUTLINE_COLOR), Some(oldPosition)/*p_animation->clearBeforeDraw() ? Some(oldPosition) : None<gui::Position>()*/);
 		if(p_animation->isMirroredY()){
 			int16_t halfDisplayWidth = tft.width();
 
@@ -1332,7 +1339,7 @@ void DisplayRGBModule::drawDynamicContent() {
 			gui::Position oldPositionMirrored = oldPosition;
 			positionMirrored.y = 70 - (positionMirrored.y - halfDisplayWidth);
 			oldPositionMirrored.y = 70 - (oldPositionMirrored.y - halfDisplayWidth);	
-			drawWindowBitPixel(gui::Window(positionMirrored.x, positionMirrored.y, p_animation->window.getImageBuffer(), p_animation->window.getColorPaletteIndex(), false, gui::Flip::VERTICALLY), Some(OUTLINE_COLOR), Some(oldPositionMirrored));				
+			drawWindowBitPixel(gui::Window(positionMirrored.x, positionMirrored.y, p_animation->window.getImageBuffer(), p_animation->window.getColorPaletteIndex(), false, gui::Flip::VERTICALLY), SomePalette(ColorPalette::OUTLINE_COLOR), Some(oldPositionMirrored));				
 		}
 		p_animation->window.updated();
 

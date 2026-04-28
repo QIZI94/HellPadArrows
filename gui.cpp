@@ -105,7 +105,7 @@ Position AnimatedMovement::animateMovement(){
 
 
 
-void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, Option<Color565> maybeOutlineColor, Option<ClearSettings> maybeClear){
+void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, Option<ColorPaletteIndex> maybeOutlineColor, Option<ClearSettings> maybeClear){
 	if(!window.needsUpdate()){
 		return;
 	}
@@ -139,7 +139,9 @@ void drawWindowBitPixel(Adafruit_ILI9341& tft, const gui::Window& window, Option
 		p_clearSettings->clearFn(p_clearSettings->position, gui::Size{.width = width, .height = height});
 	}
 	if(!window.isHidden()){
-		Color565 outlineColor = maybeOutlineColor.valueOr(mainColor);
+		Color565 outlineColor = Window::LoadColorFromColorPalette(
+			maybeOutlineColor.valueOr(window.getColorPaletteIndex())
+		).valueOr(ILI9341_BLACK);
 		drawBitmapWithOutline(tft, imageBuffer.iterate(), windowPosition.x, windowPosition.y, windowSize.width, windowSize.height, mainColor, outlineColor, window.getFlipSetting());
 	}
 }

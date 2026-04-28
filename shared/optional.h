@@ -27,6 +27,7 @@ namespace detail{
 
 namespace detail{
 	struct NoTypeNoneOption{};
+	struct UninitializedHelper{};
 } // namespace detail
 
 #ifdef ROPTION_USE_NAMESPACE
@@ -38,9 +39,9 @@ struct None_t{};
 template<typename T>
 struct Option{
 public:
-    constexpr Option() : m_uinitialized(0), mb_hasValue(false){}
-	constexpr Option(None_t<T>) : m_uinitialized(0), mb_hasValue(false){}
-	constexpr Option(None_t<detail::NoTypeNoneOption>) : m_uinitialized(0), mb_hasValue(false){}
+    constexpr Option() : m_uinitialized({}){}
+	constexpr Option(None_t<T>) : m_uinitialized({}){}
+	constexpr Option(None_t<detail::NoTypeNoneOption>) : m_uinitialized({}){}
     constexpr explicit Option(T value) : m_value(detail::move(value)), mb_hasValue(true){}
 	//constexpr Option(T&& value) : m_value(detail::move(value)), mb_hasValue(true){}
 
@@ -78,7 +79,7 @@ public:
 	
 private:
 	union{
-		char m_uinitialized;
+		detail::UninitializedHelper m_uinitialized;
 		T m_value;
 	};
     bool mb_hasValue = false;

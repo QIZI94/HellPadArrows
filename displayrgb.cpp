@@ -45,6 +45,36 @@ struct ScriptedDelay{
 		return false;
 	}
 };
+
+struct ScriptedExplosion{
+	static constexpr gui::Position8Bit DefaultOrigin{.x = 55, .y = 100};
+	static constexpr ScriptedExplosion fromPosition(uint8_t slotIndex,  uint8_t x, uint8_t y){
+		return ScriptedExplosion{
+			.slotIndex = slotIndex,
+			.xOffset = uint8_t(x - DefaultOrigin.x),
+			.yOffset = uint8_t(y - DefaultOrigin.y)
+		};
+	}
+	struct GlobalAttributes {
+		gui::Position8Bit originPosition = DefaultOrigin;
+		uint8_t radius = 50;
+	};
+
+	static GlobalAttributes& GetGlobalAttribute(){
+		static GlobalAttributes globalAttributes;
+		return globalAttributes;
+	}
+
+	uint16_t slotIndex : 2;
+	uint16_t xOffset : 7;
+	uint16_t yOffset : 7;
+};
+
+struct ScriptedExplosionRadius{
+	uint8_t radius;
+};
+
+
 struct ScriptedAction{
 	using ScriptedFunction = bool(* const)();
 	enum class ActionType : uint8_t{
@@ -52,19 +82,27 @@ struct ScriptedAction{
 		DELAY,
 		ANIMATION,
 		ANIMATION_NON_BLOCKING,
+		EXPLOSION,
+		EXPLOSION_RADIUS,
 		FUNCTION
 	};
 
-	constexpr ScriptedAction() : animation(nullptr), actionType(ActionType::NONE) {}
+	constexpr ScriptedAction() : uninitialized({}), actionType(ActionType::NONE) {}
 	constexpr ScriptedAction(ScriptedDelay scriptedDelay) : scriptedDelay(scriptedDelay), actionType(ActionType::DELAY){}
 	constexpr ScriptedAction(gui::AnimatedMovement* animation, bool nonBlocking = false)
 		: animation(animation), actionType(nonBlocking ? ActionType::ANIMATION_NON_BLOCKING : ActionType::ANIMATION){}
+	
+	constexpr ScriptedAction(ScriptedExplosion explosion) : explosion(explosion), actionType(ActionType::EXPLOSION){}
+	constexpr ScriptedAction(ScriptedExplosionRadius explosionRadius) : explosionRadius(explosionRadius), actionType(ActionType::EXPLOSION_RADIUS) {}
 	constexpr ScriptedAction(const ScriptedFunction function) : function(function), actionType(ActionType::FUNCTION){}
-
+	
 	union{
+		detail::UninitializedHelper uninitialized;
 		ScriptedDelay scriptedDelay;
 		gui::Window* const window;
 		gui::AnimatedMovement* const animation;
+		ScriptedExplosion explosion;
+		ScriptedExplosionRadius explosionRadius;
 		const ScriptedFunction function;
 	};
 	const ActionType actionType;
@@ -109,6 +147,11 @@ struct ExplosionParams {
 	gui::Color565 computeColor() const {
 		return gui::lerpColor565(ILI9341_WHITE, ILI9341_ORANGE, targetRadius, currentRadius);
 	}
+};
+
+struct LaserParams{
+	uint8_t currentX;
+	uint8_t endX;
 };
 
 
@@ -169,6 +212,9 @@ constexpr int16_t ARROWS_TINY_OFFSETS_HORIZONTAL[ARROW_MAX_SLOTS] = {
 	85,
 	102,
 };
+
+
+
 
 
 
@@ -279,6 +325,10 @@ static gui::Position selectedLowerSlotPreviousPosition = {-100.-100};
 	true
 );*/
 
+constexpr gui::Position heBarrageEndPos0{50, 206};
+constexpr gui::Position heBarrageEndPos1{90, heBarrageEndPos0.y};
+constexpr gui::Position heBarrageEndPos2{130, heBarrageEndPos0.y};
+constexpr gui::Position heBarrageEndPos3{170, heBarrageEndPos0.y};
 
 static gui::AnimatedMovement lowPriorityAnimations[] = {
 
@@ -321,29 +371,29 @@ static gui::AnimatedMovement lowPriorityAnimations[] = {
 	// scriptedOrbital120MM_HEBarrage
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR), true, gui::Flip::HORIZONTALLY_ROTATED_LEFT),
-		gui::Position{138, 72+6},	gui::Position{138, 200+30},
-		3000,
+		gui::Position{heBarrageEndPos2.x, 72+6},	heBarrageEndPos2,
+		3200,
 		gui::AnimatedMovement::FinishBehavior::RUN_ONCE,
 		true, false, true
 	),
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR), true, gui::Flip::HORIZONTALLY_ROTATED_LEFT),
-		gui::Position{83, 72+6},	gui::Position{83, 200+30},
-		3500,
+		gui::Position{heBarrageEndPos1.x, 72+6},	heBarrageEndPos1,
+		3700,
 		gui::AnimatedMovement::FinishBehavior::RUN_ONCE,
 		true, false, true
 	),
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR), true, gui::Flip::HORIZONTALLY_ROTATED_LEFT),
-		gui::Position{203, 72+6},	gui::Position{203, 200+30},
-		4250,
+		gui::Position{heBarrageEndPos3.x, 72+6},	heBarrageEndPos3,
+		4450,
 		gui::AnimatedMovement::FinishBehavior::RUN_ONCE,
 		true, false, true
 	),
 	gui::AnimatedMovement(
 		gui::Window(0, 0, DPS_500kgBombHorMid, uint8_t(ColorPalette::HELL_MAIN_COLOR), true, gui::Flip::HORIZONTALLY_ROTATED_LEFT),
-		gui::Position{30, 72+6},	gui::Position{30, 200+30},
-		6000,
+		gui::Position{heBarrageEndPos0.x, 72+6},	heBarrageEndPos0,
+		6200,
 		gui::AnimatedMovement::FinishBehavior::RUN_ONCE,
 		true, false, true
 	),
@@ -415,6 +465,8 @@ Option<FlashParams> requestedScreenFlashing;
 //Option<ExplosionParams> requestedExplosion;
 
 Option<ExplosionParams> requestedExplosions[4];
+
+Option<LaserParams> requestedLaser;
 
 static StaticTimer10ms screenFlashTimer;
 
@@ -583,115 +635,115 @@ static bool waitTillExplosionsFinish(){
 }
 
 
-static const ScriptedAction  scripted500KgBomb_Eagle[]{
+static const ScriptedAction PROGMEM scripted500KgBomb_Eagle[]{
 	//ScriptedDelay(2000),
 	//ScriptedDelay(2500),
 	ScriptedAction(&lowPriorityAnimations[0], true),
 	&lowPriorityAnimations[1],
 	&lowPriorityAnimations[2],
 	startShakingAndScreenFlashing,
-	ScriptedAction(
+	/*ScriptedAction(
 		[]() -> bool {
 			
 			requestExplosion({121, 206}, 50, 0);
 	
 			return true;
 		}
-	),
+	),*/
+	ScriptedExplosion::fromPosition(0, 121, 206),
 	ScriptedDelay(1670),
-	ScriptedAction(
-		[]() -> bool {
-
-			requestExplosion({150, 220}, 20, 1);
-			requestExplosion({90, 220}, 20, 2);
-			
-			return true;
-		}
-	),
+	ScriptedExplosionRadius{20},
+	ScriptedExplosion::fromPosition(1, 175, 210),
+	ScriptedExplosion::fromPosition(2, 65, 210),
+	
 	waitTillExplosionsFinish,
 	ScriptedAction::None()
 };
 
-static const ScriptedAction  scriptedOrbital120MM_HEBarrage[]{
+static const ScriptedAction PROGMEM scriptedOrbital120MM_HEBarrage []{
 	ScriptedAction(&lowPriorityAnimations[4], true),
 	ScriptedAction(&lowPriorityAnimations[5], true),
 	ScriptedAction(&lowPriorityAnimations[6], true),
 	&lowPriorityAnimations[3],
 	
 	startShakingAndScreenFlashing,
-	ScriptedAction(
+	ScriptedExplosionRadius{30},
+	ScriptedExplosion::fromPosition(0, heBarrageEndPos2.x, heBarrageEndPos2.y),
+	/*ScriptedAction(
 		[]() -> bool {
 			
-			requestExplosion(gui::Position8Bit::from(lowPriorityAnimations[3].getEndPos()), 30, 0);
+			requestExplosion(gui::Position8Bit::from(heBarrageEndPos2), 30, 0);
 	
 			return true;
 		}
-	),
+	),*/
 	&lowPriorityAnimations[4],
-	ScriptedAction(
+	ScriptedExplosionRadius{18},
+	ScriptedExplosion::fromPosition(1, heBarrageEndPos1.x, heBarrageEndPos1.y),
+	/*ScriptedAction(
 		[]() -> bool {
 			
-			requestExplosion(gui::Position8Bit::from(lowPriorityAnimations[4].getEndPos()), 18, 1);
+			requestExplosion(gui::Position8Bit::from(heBarrageEndPos1), 18, 1);
 	
 			return true;
 		}
-	),
+	),*/
+	
 	&lowPriorityAnimations[5],
-	ScriptedAction(
-		[]() -> bool {
-			requestExplosion({150, 220}, 35, 0);
-			requestExplosion({70, 220}, 35, 1);
-			requestExplosion(gui::Position8Bit::from(lowPriorityAnimations[5].getEndPos()), 25, 2);
-	
-			return true;
-		}
-	),
+	ScriptedExplosionRadius{35},
+	ScriptedExplosion::fromPosition(0, 150, heBarrageEndPos3.y),
+	ScriptedExplosion::fromPosition(1, 70, heBarrageEndPos3.y),
+	ScriptedExplosionRadius{25},
+	ScriptedExplosion::fromPosition(2, heBarrageEndPos3.x, heBarrageEndPos3.y),
 	&lowPriorityAnimations[6],
-	ScriptedAction(
+	ScriptedExplosionRadius{20},
+	ScriptedExplosion::fromPosition(3, heBarrageEndPos0.x, heBarrageEndPos0.y),
+	/*ScriptedAction(
 		[]() -> bool {
 			
-			requestExplosion(gui::Position8Bit::from(lowPriorityAnimations[6].getEndPos()), 20, 3);
+			requestExplosion(gui::Position8Bit::from(heBarrageEndPos0), 20, 3);
 	
 			return true;
 		}
-	),
+	),*/
 	waitTillExplosionsFinish,
 	ScriptedAction::None()
 };
 
+
+
 gui::Window lasser = gui::Window(0,0, nullptr);
 uint8_t a = 0;
-static const ScriptedAction  scriptedOrbitalLaser[]{
+static const ScriptedAction PROGMEM scriptedOrbitalLaser[]{
+	//ScriptedExplosion{.slotIndex = 0, .xOffset = 10, .yOffset = 10},
 	ScriptedAction(
 		[]() -> bool {
-			constexpr uint8_t MAX_OFFSET = 10;
-
-			constexpr gui::Position8Bit startPos {.x = 70, .y = 130};
-			constexpr gui::Size8Bit lineSize {.width = 1, .height = 130};
-			
-
-			//static constexpr uint8_t []
-			
-			clearWithGrid8Bit(startPos.withX(startPos.x + a), lineSize);
-			for(uint8_t offset = 1; offset < MAX_OFFSET; ++offset){
-				
-				//tft.writeLine(startPos.x, startPos.y + offset, endPos.x + (MAX_OFFSET - offset) + a, endPos.y, ILI9341_WHITE);
-				tft.drawFastVLine(startPos.x + a + offset, startPos.y, lineSize.height, ILI9341_WHITE);
-			}
-			if(a % 20 == 0){
-				requestExplosion(startPos.withX(startPos.x + a), 10, 0);
-			}
-			a++;
-
-			
-
+			requestedLaser = Some(LaserParams{.currentX = 0, .endX = 250});
+			ScriptedExplosion::GetGlobalAttribute().radius = 14;
 			//lasser.
 
 			//gui::Window()
 
-			return false;
+			return true;
 		}
-	)
+	),
+	
+	ScriptedDelay(1700/2),
+	
+	ScriptedExplosion::fromPosition(0,60,205),
+	startShakingAndScreenFlashing,
+	ScriptedDelay(600),
+	ScriptedExplosion::fromPosition(0,100,205),
+	ScriptedDelay(600),
+	ScriptedExplosion::fromPosition(0,130,205),
+	ScriptedDelay(600),
+	ScriptedExplosion::fromPosition(0,180,205),
+	ScriptedAction(
+		[]() -> bool {
+			return !requestedLaser.hasValue();
+		}
+	),
+	ScriptedAction::None()
 };
 
 
@@ -968,7 +1020,7 @@ DisplayRGBModule::InitializationState DisplayRGBModule::init(){
 	//tft.invertDisplay(1);
 	gui::Window::SetColorPaletteBuffer(colorPaletteBuf);
 	drawStaticContent();
-
+	showOutcome(Some(Stratagem::Orbital120MM_HEBarrage));
 	/*for(gui::Window& primaryArrowWindow : primarySuggestionArrows){
 		primaryArrowWindow.setImageBuffer(&DPS_ArrowRightTinyBMP);
 		primaryArrowWindow.setHidden(false);
@@ -1046,6 +1098,8 @@ void DisplayRGBModule::drawStaticContent(){
 	
 
 	drawSelectionBackgroundGrid();
+	//tft.drawFastHLine(ScriptedExplosion::DefaultOrigin.x, ScriptedExplosion::DefaultOrigin.y, 127, ILI9341_WHITE);
+	//tft.drawFastVLine(ScriptedExplosion::DefaultOrigin.x, ScriptedExplosion::DefaultOrigin.y, 127, ILI9341_WHITE);
 	//drawWindowBitPixel(gui::Window(240/2,320/2, DPS_ArrowUpBigBMP, uint8_t(ColorPalette::HELL_MAIN_COLOR), false, gui::Flip::VERTICALLY_ROTATED_LEFT),Some(OUTLINE_COLOR));
 	//arrow placeholder
 
@@ -1111,18 +1165,50 @@ void DisplayRGBModule::drawDynamicContent() {
 				//tft.drawFastHLine(groundPosition.x, groundPosition.y+14, 180, INVALID_COMBINATION_COLOR);
 				groundDrawn = true;
 			}
-			else if(currentScriptedAction->actionType == ScriptedAction::ActionType::NONE){
-				clearWithGrid8Bit({.x = 70, .y = 147}, {.width = 100, .height = 6});
-				drawSelectionBackgroundGrid();
-				currentScriptedAction = nullptr;
-			}
-			else if(currentScriptedAction->run()){
-				currentScriptedAction++;
-							
+			else{
+				ScriptedAction loadedScriptedAction;
+				PROGMEM_READ_STRUCTURE(&loadedScriptedAction, currentScriptedAction);
+				if(loadedScriptedAction.actionType == ScriptedAction::ActionType::NONE){
+					clearWithGrid8Bit({.x = 70, .y = 147}, {.width = 100, .height = 6});
+					drawSelectionBackgroundGrid();
+					currentScriptedAction = nullptr;
+					ScriptedExplosion::GetGlobalAttribute() = ScriptedExplosion::GlobalAttributes();
+				}
+				else if(loadedScriptedAction.run()){
+					currentScriptedAction++;
+								
+				}
 			}
 		}
 		
 		
+	}
+	// optimized laser
+	if(LaserParams* p_laser = requestedLaser.ptr_value()){
+
+
+		constexpr uint8_t MAX_OFFSET = 9;
+
+		constexpr gui::Position8Bit startPos {.x = 70, .y = 80};
+		
+		constexpr gui::Size8Bit lineSize {.width = 2, .height = 130};
+				//static constexpr uint8_t []
+		
+		clearWithGrid8Bit(startPos.withX(p_laser->currentX - 1), lineSize);
+		for(uint8_t offset = 1; offset < MAX_OFFSET; ++offset){
+			
+			//tft.writeLine(startPos.x, startPos.y + offset, endPos.x + (MAX_OFFSET - offset) + a, endPos.y, ILI9341_WHITE);
+			tft.drawFastVLine(p_laser->currentX + offset, startPos.y, lineSize.height, ILI9341_WHITE);
+		}
+		if(p_laser->currentX >= p_laser->endX){
+			requestedLaser = None;
+		}
+		else{
+			p_laser->currentX+=2;
+		}
+
+		
+
 	}
 	
 
@@ -1353,6 +1439,7 @@ void DisplayRGBModule::drawDynamicContent() {
 
 
 bool ScriptedAction::run() const {
+	const ScriptedExplosion::GlobalAttributes& originPosition = ScriptedExplosion::GetGlobalAttribute();
 	switch (actionType){
 		case ScriptedAction::ActionType::DELAY:
 			return scriptedDelay.runDelay();
@@ -1378,7 +1465,21 @@ bool ScriptedAction::run() const {
 			animation->window.setHidden(false);
 			animation->restart();
 			return true;
-
+		case ScriptedAction::ActionType::EXPLOSION:
+			
+			requestExplosion(
+				{
+					uint8_t(originPosition.originPosition.x + uint8_t(explosion.xOffset)),
+					uint8_t(originPosition.originPosition.y + uint8_t(explosion.yOffset))
+				},
+				originPosition.radius,
+				explosion.slotIndex
+			);
+			
+			return true;
+		case ScriptedAction::ActionType::EXPLOSION_RADIUS:
+			ScriptedExplosion::GetGlobalAttribute().radius = explosionRadius.radius;
+			return true;
 		case ScriptedAction::ActionType::FUNCTION:
 			return function();
 	

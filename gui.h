@@ -18,11 +18,59 @@ struct Position {
 	int16_t x;
 	int16_t y;
 
-	bool operator ==(const Position& other) const {
+	constexpr bool operator ==(const Position& other) const {
 		return x == other.x && y == other.y;
 	}
-	bool operator !=(const Position& other) const {
+	constexpr bool operator !=(const Position& other) const {
 		return x != other.x || y != other.y;
+	}
+
+	constexpr Position operator+(const Position& rhs) {
+        
+        return Position{.x = int16_t(x + rhs.x), .y = int16_t(x + rhs.y)};
+    }
+
+    constexpr Position operator-(const Position& rhs) {
+        return Position{.x = int16_t(x + rhs.x), .y = int16_t(x + rhs.y)};
+    }
+
+	Position& operator+=(const Position& rhs) {
+        x += rhs.x;
+        y += rhs.y;
+        return *this;
+    }
+
+	Position& operator-=(const Position& rhs) {
+        x -= rhs.x;
+        y -= rhs.y;
+        return *this;
+    }
+
+	constexpr Position withX(int16_t newX) {
+		return Position{
+			.x = newX,
+			.y = y
+		};
+	}
+	constexpr Position withY(int16_t newY) {
+		return Position{
+			.x = x,
+			.y = newY
+		};
+	}
+
+	constexpr Position withAddX(int16_t otherX) {
+		return Position{
+			.x = int16_t(x + otherX),
+			.y = y
+		};
+	}
+
+	constexpr Position withAddY(int16_t otherY) {
+		return Position{
+			.x = x,
+			.y = int16_t(y + otherY)
+		};
 	}
 
 	Position lerpTo(const Position& to, uint16_t durationMs, uint16_t elapsedTtimeMs) const;
@@ -44,6 +92,28 @@ struct Position8Bit{
 		return x != other.x || y != other.y;
 	}
 
+	constexpr Position8Bit operator+(const Position8Bit& rhs) {
+        
+        return Position8Bit{.x = uint8_t(x + rhs.x), .y = uint8_t(x + rhs.y)};
+    }
+
+    constexpr Position8Bit operator-(const Position8Bit& rhs) {
+        return Position8Bit{.x = uint8_t(x + rhs.x), .y = uint8_t(x + rhs.y)};
+    }
+
+	Position8Bit& operator+=(const Position& rhs) {
+        x += rhs.x;
+        y += rhs.y;
+        return *this;
+    }
+
+	Position8Bit& operator-=(const Position& rhs) {
+        x -= rhs.x;
+        y -= rhs.y;
+        return *this;
+    }
+
+
 	constexpr Position8Bit withX(uint8_t newX) {
 		return Position8Bit{
 			.x = newX,
@@ -57,11 +127,25 @@ struct Position8Bit{
 		};
 	}
 
+	constexpr Position8Bit withAddX(uint8_t otherX) {
+		return Position8Bit{
+			.x = uint8_t(x + otherX),
+			.y = y
+		};
+	}
+
+	constexpr Position8Bit withAddY(uint8_t otherY) {
+		return Position8Bit{
+			.x = x,
+			.y = uint8_t(y + otherY)
+		};
+	}
+
 	
 
 	Position8Bit lerpTo(const Position8Bit& to, uint16_t durationMs, uint16_t elapsedTtimeMs) const;
 
-	static Position8Bit from(const Position& position){
+	static constexpr Position8Bit from(const Position& position){
 		return Position8Bit{
 			.x = uint8_t(position.x),
 			.y = uint8_t(position.y)
